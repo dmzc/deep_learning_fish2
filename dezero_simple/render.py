@@ -1,0 +1,98 @@
+if "__file__" in globals():
+    import os, sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from dezero_simple.core import Variable, Function
+from graphviz import Digraph
+from pathlib import Path
+
+
+def render(x: Variable, path: Path = None):
+
+    # 有向图，从左到右流向LR
+    dot = Digraph("signal_flow", format="png")
+    dot.attr(
+        rankdir="LR",
+        style="filled",
+        fontname="SimHei",
+        fontsize="12",
+    )  # LR=从左到右
+    dot.attr(
+        "node",
+        style="filled",
+        fontname="SimHei",
+        fontsize="12",
+        fillcolor="white",
+        align="left",
+    )
+    variables: set = set()
+    functions: set = set()
+    handled_funtions: set = set()
+
+    def add_node(node: Function, is_variable=True):
+        id = node.id
+        name = node.name
+        if is_variable:
+            if id not in variables:
+                variables.add(id)
+                variable: Variable = node
+                fill_color = "white"
+                if variable.is_input:
+                    fill_color = "green"
+                dot.node(
+                    name=id,
+                    label=name,
+                    shape="circle",
+                    width="1.4",
+                    fixedsize="1.2",
+                    fillcolor=fill_color,
+                )
+        else:
+            if id not in functions:
+                functions.add(id)
+                dot.node(
+                    name=id,
+                    label=name,
+                    shape="box",
+                    style="filled,rounded",
+                    fillcolor="#87CEEB",
+                )
+
+    def add_edge(left: str, right: str, is_grad=False, label: str = None):
+        if label is None:
+            label = ""
+        if is_grad:
+            dot.edge(left, right, style="dashed", label=label)
+        else:
+            dot.edge(left, right, label=label)
+
+    def process(func: Function):
+        if func is None:
+            return
+        if func not in handled_funtions:
+            handled_funtions.add(func)
+        else:
+            return
+
+        inputs = func.inputs
+        outputs = func.outputs
+
+        func_id = func.id
+        add_node(func, False)
+
+        for output in outputs:
+            add_node(output())
+            add_edge(func_id, output().id)
+            # add_edge(output_name, func_name, is_grad=True, label=f"{output.grad}")
+
+        for input in inputs:
+            add_node(input)
+            add_edge(input.id, func_id)
+            process(input.creator)
+
+    process(x.creator)
+    dot.render("signal_diagram", view=True)
+    if path is not None:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(dot.source)
+    input("图形已打开，按回车键关闭程序...")

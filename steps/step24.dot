@@ -1,0 +1,30 @@
+digraph signal_flow {
+	fontname=SimHei rankdir=LR
+	_1642062182048_ [label="Mul(2)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
+	_1642062182336_ [label="数据：54.0
+层级：3
+梯度：1" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
+	_1642062182048_ -> _1642062182336_ [label=""]
+	_1642062182192_ [label="数据：18.0
+层级：2
+梯度：3.0" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
+	_1642062182192_ -> _1642062182048_ [label=""]
+	_1642060935472_ [label="Mul(1)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
+	_1642060935472_ -> _1642062182192_ [label=""]
+	_1642062182096_ [label="数据：6.0
+层级：1
+梯度：9.0" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
+	_1642062182096_ -> _1642060935472_ [label=""]
+	_1641343916528_ [label="Mul(0)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
+	_1641343916528_ -> _1642062182096_ [label=""]
+	_1641343916336_ [label="a(0)
+数据：2.0
+梯度：27.0" fillcolor=green fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
+	_1641343916336_ -> _1641343916528_ [label=""]
+	_1641343916384_ [label="b(0)
+数据：3.0
+梯度：54.0" fillcolor=green fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
+	_1641343916384_ -> _1641343916528_ [label=""]
+	_1641343916384_ -> _1642060935472_ [label=""]
+	_1641343916384_ -> _1642062182048_ [label=""]
+}
