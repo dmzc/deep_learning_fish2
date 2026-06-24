@@ -1,0 +1,111 @@
+digraph signal_flow {
+	fontname=SimHei fontsize=12 rankdir=LR style=filled warning=0
+	node [align=left fillcolor=white fontname=SimHei fontsize=12 margin="0.15,0.1" style=filled]
+	_1721817514864_ [label="Add(5)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817515152_ [label="数据：0.7071064695751781
+层级：6
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514864_ -> _1721817515152_ [label=""]
+	_1721817514672_ [label="数据：0.7071430457793603
+层级：5
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514672_ -> _1721817514864_ [label=""]
+	_1721817514384_ [label="Add(4)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817514384_ -> _1721817514672_ [label=""]
+	_1721817514192_ [label="数据：0.7046526512091675
+层级：4
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514192_ -> _1721817514384_ [label=""]
+	_1721817333616_ [label="Add(3)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817333616_ -> _1721817514192_ [label=""]
+	_1721817333424_ [label="数据：0.7853981633974483
+层级：3
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333424_ -> _1721817333616_ [label=""]
+	_1721817333088_ [label="Add(2)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817333088_ -> _1721817333424_ [label=""]
+	_1721817333232_ [label="数据：0.7853981633974483
+层级：2
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333232_ -> _1721817333088_ [label=""]
+	_1721099214016_ [label="Mul(1)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721099214016_ -> _1721817333232_ [label=""]
+	_1721817333040_ [label="数据：0.7853981633974483
+层级：1
+梯度：1.0" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333040_ -> _1721099214016_ [label=""]
+	_1721099213920_ [label="Pow(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721099213920_ -> _1721817333040_ [label=""]
+	_1721099212624_ [label="X(0)
+数据：0.7853981633974483
+梯度：0.7071032148228457" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721099212624_ -> _1721099213920_ [label=""]
+	_1721817333184_ [label="数据：1.0
+层级：0
+梯度：0.7853981633974483" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333184_ -> _1721099214016_ [label=""]
+	_1721817333376_ [label="数据：0
+层级：0
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333376_ -> _1721817333088_ [label=""]
+	_1721817514048_ [label="数据：-0.08074551218828077
+层级：2
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514048_ -> _1721817333616_ [label=""]
+	_1721817333472_ [label="Mul(1)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817333472_ -> _1721817514048_ [label=""]
+	_1721817333568_ [label="数据：0.48447307312968463
+层级：1
+梯度：-0.16666666666666666" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333568_ -> _1721817333472_ [label=""]
+	_1721817333280_ [label="Pow(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817333280_ -> _1721817333568_ [label=""]
+	_1721099212624_ -> _1721817333280_ [label=""]
+	_1721817333712_ [label="数据：-0.16666666666666666
+层级：0
+梯度：0.48447307312968463" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817333712_ -> _1721817333472_ [label=""]
+	_1721817514528_ [label="数据：0.00249039457019272
+层级：2
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514528_ -> _1721817514384_ [label=""]
+	_1721817514240_ [label="Mul(1)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817514240_ -> _1721817514528_ [label=""]
+	_1721817514336_ [label="数据：0.2988473484231264
+层级：1
+梯度：0.008333333333333333" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514336_ -> _1721817514240_ [label=""]
+	_1721817514096_ [label="Pow(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817514096_ -> _1721817514336_ [label=""]
+	_1721099212624_ -> _1721817514096_ [label=""]
+	_1721817514480_ [label="数据：0.008333333333333333
+层级：0
+梯度：0.2988473484231264" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514480_ -> _1721817514240_ [label=""]
+	_1721817515008_ [label="数据：-3.657620418217724e-05
+层级：2
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817515008_ -> _1721817514864_ [label=""]
+	_1721817514720_ [label="Mul(1)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817514720_ -> _1721817515008_ [label=""]
+	_1721817514816_ [label="数据：0.1843440690781733
+层级：1
+梯度：-0.0001984126984126984" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514816_ -> _1721817514720_ [label=""]
+	_1721817514576_ [label="Pow(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817514576_ -> _1721817514816_ [label=""]
+	_1721099212624_ -> _1721817514576_ [label=""]
+	_1721817514960_ [label="数据：-0.0001984126984126984
+层级：0
+梯度：0.1843440690781733" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817514960_ -> _1721817514720_ [label=""]
+	_1721817515200_ [label="Sin(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1721817515392_ [label="数据：0.7071067811865476
+层级：1
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817515200_ -> _1721817515392_ [label=""]
+	_1721817515056_ [label="X1(0)
+数据：0.7853981633974483
+梯度：0.7071067811865476" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1721817515056_ -> _1721817515200_ [label=""]
+}

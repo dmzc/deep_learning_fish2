@@ -3,6 +3,7 @@ import numpy as np
 from graphviz import Digraph
 import psutil
 import os
+import math
 import weakref
 from config import ENABLE_BACKPROGATION
 
@@ -295,6 +296,33 @@ class Pow(Function):
 
 def pow(x, c):
     return Pow(c)(x)
+
+
+class Sin(Function):
+    def forward(self, x):
+        return np.sin(x)
+
+    def backward(self, dout):
+        return dout * np.cos(self.inputs[0].data)
+
+
+def sin(x) -> Variable:
+    return Sin()(x)
+
+
+def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
+    """
+    麦克劳林展开求sin
+    """
+    y = 0
+    for i in range(100000):
+        const: int = 2 * i + 1
+        c: float = (-1) ** i / math.factorial(const)
+        t: Variable = c * (x**const)
+        y = y + t
+        if abs(t.data) < threshold:
+            break
+    return y
 
 
 def setup_variable():

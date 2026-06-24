@@ -9,7 +9,12 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                // ${workspaceFolder} = VSCode打开的项目根目录
+                // Windows用分号;分隔多路径，Mac/Linux用冒号:
+                "PYTHONPATH": "${workspaceFolder};${env:PYTHONPATH}"
+            }
         },
         {
             "name": "pytest调试",

@@ -1,30 +1,31 @@
 digraph signal_flow {
-	fontname=SimHei rankdir=LR
-	_1642062182048_ [label="Mul(2)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
-	_1642062182336_ [label="数据：54.0
+	fontname=SimHei fontsize=12 rankdir=LR style=filled
+	node [align=left fillcolor=white fontname=SimHei fontsize=12 style=filled]
+	_1856345734400_ [label="Mul(2)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1856345734688_ [label="数据：54.0
 层级：3
-梯度：1" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
-	_1642062182048_ -> _1642062182336_ [label=""]
-	_1642062182192_ [label="数据：18.0
+梯度：1" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1856345734400_ -> _1856345734688_ [label=""]
+	_1856345734544_ [label="数据：18.0
 层级：2
-梯度：3.0" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
-	_1642062182192_ -> _1642062182048_ [label=""]
-	_1642060935472_ [label="Mul(1)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
-	_1642060935472_ -> _1642062182192_ [label=""]
-	_1642062182096_ [label="数据：6.0
+梯度：3.0" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1856345734544_ -> _1856345734400_ [label=""]
+	_1856344470336_ [label="Mul(1)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1856344470336_ -> _1856345734544_ [label=""]
+	_1856345734448_ [label="数据：6.0
 层级：1
-梯度：9.0" fillcolor=white fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
-	_1642062182096_ -> _1642060935472_ [label=""]
-	_1641343916528_ [label="Mul(0)" fillcolor="#87CEEB" fontname=SimHei fontsize=12 shape=box style="filled,rounded"]
-	_1641343916528_ -> _1642062182096_ [label=""]
-	_1641343916336_ [label="a(0)
+梯度：9.0" fillcolor=white fixedsize=1.2 shape=circle width=1.4]
+	_1856345734448_ -> _1856344470336_ [label=""]
+	_1855627615424_ [label="Mul(0)" fillcolor="#87CEEB" shape=box style="filled,rounded"]
+	_1855627615424_ -> _1856345734448_ [label=""]
+	_1855627262704_ [label="a(0)
 数据：2.0
-梯度：27.0" fillcolor=green fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
-	_1641343916336_ -> _1641343916528_ [label=""]
-	_1641343916384_ [label="b(0)
+梯度：27.0" fillcolor=green fixedsize=1.2 shape=circle width=1.4]
+	_1855627262704_ -> _1855627615424_ [label=""]
+	_1855621689552_ [label="b(0)
 数据：3.0
-梯度：54.0" fillcolor=green fixedsize=1 fontname=SimHei fontsize=12 shape=circle style=filled width=1.2]
-	_1641343916384_ -> _1641343916528_ [label=""]
-	_1641343916384_ -> _1642060935472_ [label=""]
-	_1641343916384_ -> _1642062182048_ [label=""]
+梯度：54.0" fillcolor=green fixedsize=1.2 shape=circle width=1.4]
+	_1855621689552_ -> _1855627615424_ [label=""]
+	_1855621689552_ -> _1856344470336_ [label=""]
+	_1855621689552_ -> _1856345734400_ [label=""]
 }

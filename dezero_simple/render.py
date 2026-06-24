@@ -1,21 +1,16 @@
-if "__file__" in globals():
-    import os, sys
-
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from dezero_simple.core import Variable, Function
 from graphviz import Digraph
 from pathlib import Path
+import os
+import time
 
 
-def render(x: Variable, path: Path = None):
+def render(x: Variable | list[Variable], path: Path = None):
 
     # 有向图，从左到右流向LR
     dot = Digraph("signal_flow", format="png")
     dot.attr(
-        rankdir="LR",
-        style="filled",
-        fontname="SimHei",
-        fontsize="12",
+        rankdir="LR", style="filled", fontname="SimHei", fontsize="12", warning="0"
     )  # LR=从左到右
     dot.attr(
         "node",
@@ -24,6 +19,7 @@ def render(x: Variable, path: Path = None):
         fontsize="12",
         fillcolor="white",
         align="left",
+        margin="0.15,0.1",
     )
     variables: set = set()
     functions: set = set()
@@ -90,9 +86,14 @@ def render(x: Variable, path: Path = None):
             add_edge(input.id, func_id)
             process(input.creator)
 
-    process(x.creator)
-    dot.render("signal_diagram", view=True)
+    if isinstance(x, list):
+        for _x in x:
+            process(_x.creator)
+    else:
+        process(x.creator)
+    output_path = dot.render(view=True, quiet=True, cleanup=True)
     if path is not None:
         with open(path, "w", encoding="utf-8") as f:
             f.write(dot.source)
-    input("图形已打开，按回车键关闭程序...")
+    time.sleep(1)  # view为true时会调用外部工具显示图片，所以不能马上删除
+    os.remove(output_path)
