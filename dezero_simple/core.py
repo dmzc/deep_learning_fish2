@@ -12,7 +12,7 @@ class Variable:
     __name: str
     is_input: bool
     data: np.ndarray
-    grad: np.ndarray
+    grad: Variable
     creator: Function
     generation: int
     __array_priority__ = 200
@@ -44,7 +44,7 @@ class Variable:
             return
 
         if self.grad is None:
-            self.grad = np.ones_like(self)
+            self.grad = Variable(np.ones_like(self), is_input=self.is_input)
         creators: list[Function] = []
         seen_set: set = set()
 
@@ -67,6 +67,7 @@ class Variable:
                     x.grad = gx
                 else:
                     x.grad = x.grad + gx
+                x.grad.is_input = x.is_input
                 if x.creator is not None:
                     add_creator(x.creator)
             if not retain_grad:
@@ -166,7 +167,7 @@ class Function:
     def forward(self, *xs: any) -> any:
         raise NotImplementedError
 
-    def backward(self, dout: any) -> any:
+    def backward(self, dout: Variable) -> any:
         raise NotImplementedError
 
     @property
@@ -187,7 +188,7 @@ class Square(Function):
         return x**2
 
     def backward(self, dout):
-        return dout * 2 * self.inputs[0].data
+        return dout * 2 * self.inputs[0]
 
 
 def square(x):
@@ -216,7 +217,7 @@ class Mul(Function):
         return y
 
     def backward(self, dout):
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs[0], self.inputs[1]
         return x1 * dout, x0 * dout
 
 
@@ -262,7 +263,7 @@ class Div(Function):
         return y
 
     def backward(self, gy):
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs[0], self.inputs[1]
         gx0 = gy / x1
         gx1 = gy * (-x0 / x1**2)
         return gx0, gx1
@@ -287,7 +288,7 @@ class Pow(Function):
         return y
 
     def backward(self, gy):
-        x = self.inputs[0].data
+        x = self.inputs[0]
         c = self.c
 
         gx = c * x ** (c - 1) * gy
@@ -303,7 +304,7 @@ class Sin(Function):
         return np.sin(x)
 
     def backward(self, dout):
-        return dout * np.cos(self.inputs[0].data)
+        return dout * cos(self.inputs[0])
 
 
 def sin(x) -> Variable:
@@ -323,6 +324,18 @@ def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
         if abs(t.data) < threshold:
             break
     return y
+
+
+class Cos(Function):
+    def forward(self, x):
+        return np.cos(x)
+
+    def backward(self, dout):
+        return dout * -sin(self.inputs[0])
+
+
+def cos(x) -> Variable:
+    return Cos()(x)
 
 
 def setup_variable():
