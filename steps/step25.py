@@ -1,11 +1,12 @@
-from dezero_simple import Variable, render
+from dezero_simple import Variable, VariableArgs, render, create_variable
 from pathlib import Path
 
 current_file = Path(__file__)
 current_dir = current_file.parent
 
-x = Variable(2.0, is_input=True)
-y = Variable(3.0, is_input=True)
+
+x = create_variable(VariableArgs(data=2.0, is_input=True))
+y = create_variable(VariableArgs(data=3.0, is_input=True))
 z: Variable = (
     1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
 ) * (

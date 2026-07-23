@@ -2,6 +2,15 @@ from __future__ import annotations
 import numpy as np
 import weakref
 from config import ENABLE_BACKPROGATION
+from dataclasses import dataclass
+
+
+@dataclass
+class VariableArgs:
+    data: any  # 数值、np.ndarray，不能是Variable实例
+    creator: Function = None
+    name: str = None
+    is_input: bool = False
 
 
 class Variable:
@@ -13,21 +22,14 @@ class Variable:
     generation: int
     __array_priority__ = 200
 
-    def __init__(
-        self, data: any, creator: Function = None, name: str = None, is_input=False
-    ):
-        if not isinstance(data, np.ndarray):
-            if isinstance(data, (int, float, np.number)):
-                data = np.array(data)
-            else:
-                raise TypeError("{}is not supportted".format(type(data)))
-        self.data = data
+    def __init__(self, args: VariableArgs):
+        self.data = args.data
         self.grad = None
-        self.__name = name
-        self.is_input = is_input
+        self.__name = args.name
+        self.is_input = args.is_input
         if ENABLE_BACKPROGATION:
-            self.creator = creator
-            if creator is None:
+            creator = self.creator = args.creator
+            if args.creator is None:
                 self.generation = 0
             else:
                 self.generation = creator.generation + 1
@@ -40,7 +42,9 @@ class Variable:
             return
 
         if self.grad is None:
-            self.grad = Variable(np.ones_like(self), is_input=self.is_input)
+            self.grad = create_variable(
+                VariableArgs(data=np.ones_like(self), is_input=self.is_input)
+            )
         creators: list[Function] = []
         seen_set: set = set()
 
@@ -132,8 +136,8 @@ class Function:
         self.outputs = None
         self.generation = None
 
-    def __call__(self, *xs) -> list[Variable] | Variable:
-        inputs = [to_variable(x) for x in xs]
+    def __call__(self, *xs: tuple[any]) -> list[Variable] | Variable:
+        inputs = [create_variable(x) for x in xs]
         xs_data = [x.data for x in inputs]
         ys = self.forward(*xs_data)
         if not isinstance(ys, tuple):
@@ -142,7 +146,7 @@ class Function:
         if ENABLE_BACKPROGATION:
             self.generation = max([x.generation for x in inputs])
             creator = self
-        outputs = [Variable(to_tensor(y), creator) for y in ys]
+        outputs = [create_variable(VariableArgs(data=y, creator=creator)) for y in ys]
         if ENABLE_BACKPROGATION:
             self.outputs = [weakref.ref(output) for output in outputs]
             self.inputs = inputs
@@ -168,12 +172,17 @@ class Function:
 
 
 def to_tensor(x: any) -> np.ndarray:
+    if isinstance(x, Variable):
+        return x
     if np.isscalar(x):
         return np.array(x)
     return x
 
 
-def to_variable(obj) -> Variable:
-    if isinstance(obj, Variable):
-        return obj
-    return Variable(obj)
+def create_variable(args: VariableArgs) -> Variable:
+    data = args.data
+    if isinstance(data, Variable):
+        return data
+    if np.isscalar(data):
+        args.data = np.array(data)
+    return Variable(args)

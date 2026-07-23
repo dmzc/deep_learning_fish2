@@ -1,8 +1,7 @@
-import numpy as np
-from dezero_simple import Variable
+from dezero_simple import Variable, VariableArgs, create_variable
 
 
-x = Variable(np.array(1.0))
+x = create_variable(VariableArgs(data=1.0))
 y: Variable = (x + 3) ** 2
 y.backward()
 
