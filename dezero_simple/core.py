@@ -1,9 +1,5 @@
 from __future__ import annotations
 import numpy as np
-from graphviz import Digraph
-import psutil
-import os
-import math
 import weakref
 from config import ENABLE_BACKPROGATION
 
@@ -124,18 +120,6 @@ class Variable:
         return "variable(" + p + ")"
 
 
-def as_array(x) -> np.ndarray:
-    if np.isscalar(x):
-        return np.array(x)
-    return x
-
-
-def as_variable(obj) -> Variable:
-    if isinstance(obj, Variable):
-        return obj
-    return Variable(obj)
-
-
 class Function:
     inputs: list[Variable]
     outputs: list[weakref.ref[Variable]]
@@ -149,7 +133,7 @@ class Function:
         self.generation = None
 
     def __call__(self, *xs) -> list[Variable] | Variable:
-        inputs = [as_variable(x) for x in xs]
+        inputs = [to_variable(x) for x in xs]
         xs_data = [x.data for x in inputs]
         ys = self.forward(*xs_data)
         if not isinstance(ys, tuple):
@@ -158,7 +142,7 @@ class Function:
         if ENABLE_BACKPROGATION:
             self.generation = max([x.generation for x in inputs])
             creator = self
-        outputs = [Variable(as_array(y), creator) for y in ys]
+        outputs = [Variable(to_tensor(y), creator) for y in ys]
         if ENABLE_BACKPROGATION:
             self.outputs = [weakref.ref(output) for output in outputs]
             self.inputs = inputs
@@ -183,169 +167,13 @@ class Function:
         return ret_name
 
 
-class Square(Function):
-    def forward(self, x):
-        return x**2
-
-    def backward(self, dout):
-        return dout * 2 * self.inputs[0]
+def to_tensor(x: any) -> np.ndarray:
+    if np.isscalar(x):
+        return np.array(x)
+    return x
 
 
-def square(x):
-    return Square()(x)
-
-
-class Add(Function):
-    def forward(self, *xs):
-        x0, x1 = xs
-        y = x0 + x1
-        return y
-
-    def backward(self, dout):
-        return dout, dout
-
-
-def add(*xs: Variable) -> list[Variable]:
-    xss = [as_array(x) for x in xs]
-    return Add()(*xss)
-
-
-class Mul(Function):
-    def forward(self, *xs):
-        x0, x1 = xs
-        y = x0 * x1
-        return y
-
-    def backward(self, dout):
-        x0, x1 = self.inputs[0], self.inputs[1]
-        return x1 * dout, x0 * dout
-
-
-def mul(*xs):
-    xss = [as_array(x) for x in xs]
-    return Mul()(*xss)
-
-
-class Neg(Function):
-    def forward(self, x):
-        return -x
-
-    def backward(self, gy):
-        return -gy
-
-
-def neg(x):
-    return Neg()(x)
-
-
-class Sub(Function):
-    def forward(self, x0, x1):
-        y = x0 - x1
-        return y
-
-    def backward(self, gy):
-        return gy, -gy
-
-
-def sub(x0, x1):
-    x1 = as_array(x1)
-    return Sub()(x0, x1)
-
-
-def rsub(x0, x1):
-    x1 = as_array(x1)
-    return sub(x1, x0)
-
-
-class Div(Function):
-    def forward(self, x0, x1):
-        y = x0 / x1
-        return y
-
-    def backward(self, gy):
-        x0, x1 = self.inputs[0], self.inputs[1]
-        gx0 = gy / x1
-        gx1 = gy * (-x0 / x1**2)
-        return gx0, gx1
-
-
-def div(x0, x1):
-    x1 = as_array(x1)
-    return Div()(x0, x1)
-
-
-def rdiv(x0, x1):
-    x1 = as_array(x1)
-    return div(x1, x0)
-
-
-class Pow(Function):
-    def __init__(self, c):
-        self.c = c
-
-    def forward(self, x):
-        y = x**self.c
-        return y
-
-    def backward(self, gy):
-        x = self.inputs[0]
-        c = self.c
-
-        gx = c * x ** (c - 1) * gy
-        return gx
-
-
-def pow(x, c):
-    return Pow(c)(x)
-
-
-class Sin(Function):
-    def forward(self, x):
-        return np.sin(x)
-
-    def backward(self, dout):
-        return dout * cos(self.inputs[0])
-
-
-def sin(x) -> Variable:
-    return Sin()(x)
-
-
-def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
-    """
-    麦克劳林展开求sin
-    """
-    y = 0
-    for i in range(100000):
-        const: int = 2 * i + 1
-        c: float = (-1) ** i / math.factorial(const)
-        t: Variable = c * (x**const)
-        y = y + t
-        if abs(t.data) < threshold:
-            break
-    return y
-
-
-class Cos(Function):
-    def forward(self, x):
-        return np.cos(x)
-
-    def backward(self, dout):
-        return dout * -sin(self.inputs[0])
-
-
-def cos(x) -> Variable:
-    return Cos()(x)
-
-
-def setup_variable():
-    Variable.__add__ = add
-    Variable.__radd__ = add
-    Variable.__mul__ = mul
-    Variable.__rmul__ = mul
-    Variable.__neg__ = neg
-    Variable.__sub__ = sub
-    Variable.__rsub__ = rsub
-    Variable.__truediv__ = div
-    Variable.__rtruediv__ = rdiv
-    Variable.__pow__ = pow
+def to_variable(obj) -> Variable:
+    if isinstance(obj, Variable):
+        return obj
+    return Variable(obj)

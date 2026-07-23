@@ -1,5 +1,5 @@
 from dezero_simple import Variable, render
-from dezero_simple.core import maclaurin_sin, sin
+from dezero_simple.functions import maclaurin_sin, sin
 from pathlib import Path
 import numpy as np
 

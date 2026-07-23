@@ -1,5 +1,5 @@
 from dezero_simple import Variable
-from dezero_simple.core import sin
+from dezero_simple.functions import sin
 from dezero_simple.render import render
 import numpy as np
 
