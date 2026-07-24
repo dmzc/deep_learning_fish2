@@ -3,6 +3,9 @@ import math
 from dezero_simple.core import Function, Variable
 
 
+# ==========================================================================
+# 基础代数函数
+# ==========================================================================
 class Add(Function):
     """
     加法
@@ -100,6 +103,9 @@ def rdiv(x0: any, x1: any):
 
 
 class Pow(Function):
+    """
+    乘幂
+    """
 
     def __init__(self, c: int):
         self.c = c
@@ -120,7 +126,19 @@ def pow(x: any, c: int):
     return Pow(c)(x)
 
 
+# ==========================================================================
+# 基本代数函数
+# ==========================================================================
+
+
+# ==========================================================================
+# 基本超越函数
+# ==========================================================================
 class Sin(Function):
+    """
+    正弦
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.sin(x)
 
@@ -148,6 +166,10 @@ def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
 
 
 class Cos(Function):
+    """
+    余弦
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.cos(x)
 
@@ -157,3 +179,142 @@ class Cos(Function):
 
 def cos(x) -> Variable:
     return Cos()(x)
+
+
+class Tanh(Function):
+    """
+    双曲正切
+    """
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        y = np.tanh(x)
+        return y
+
+    def backward(self, gy: Variable) -> Variable:
+        y = self.outputs[0]()  # weakref
+        gx = gy * (1 - y * y)
+        return gx
+
+
+def tanh(x: any) -> Variable:
+    return Tanh()(x)
+
+
+class Exp(Function):
+    """
+    指数函数
+    """
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        y = np.exp(x)
+        return y
+
+    def backward(self, gy: Variable) -> Variable:
+        y = self.outputs[0]()  # weakref
+        gx = gy * y
+        return gx
+
+
+def exp(x):
+    return Exp()(x)
+
+
+class Log(Function):
+    """
+    对数函数
+    """
+
+    def forward(self, x: np.ndarray):
+        y = np.log(x)
+        return y
+
+    def backward(self, gy: Variable) -> Variable:
+        x = self.inputs[0]
+        gx = gy / x
+        return gx
+
+
+def log(x):
+    return Log()(x)
+
+
+# ==========================================================================
+# 基本超越函数
+# ==========================================================================
+
+
+# ==========================================================================
+# 张量操作函数
+# ==========================================================================
+
+
+class Reshape(Function):
+    """
+    张量形状变更
+    """
+
+    __n_shape: tuple[int]  # 新形状
+    __o_shape: tuple[int]  # 旧形状
+
+    def __init__(self, n_shape: tuple[int]):
+        super().__init__()
+        self.__n_shape = n_shape
+        self.__o_shape = None
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        self.__o_shape = x.shape
+        return np.reshape(x, self.__n_shape)
+
+    def backward(self, dout: Variable) -> Variable:
+        return reshape(dout, self.__o_shape)
+
+
+def reshape(x: np.ndarray | Variable | list[int], shape: tuple[int]) -> Variable:
+    """
+    list[int]代表原生多维数组
+    """
+    return Reshape(shape)(x)
+
+
+class Transpose(Function):
+    """
+    np.transpose:数据本身在内存中不会变,只是改变shape、stride。
+
+    如果不传递参数，那么就是全部倒序下：
+
+    x.shape # (2, 3, 4)
+
+    x = x.transpose()
+
+    x.shape # (4, 3, 2)
+    """
+
+    __n_axis: tuple[int]
+
+    def __init__(self, n_axis=None):
+        super().__init__()
+        self.__n_axis = n_axis
+
+    def forward(self, x: np.ndarray):
+        return x.transpose(self.__n_axis)
+
+    def backward(self, dout: Variable) -> Variable:
+        n_axis = self.__n_axis
+        if n_axis is None:
+            return transpose(dout)
+        axis_len = len(n_axis)
+        # TODO:这里没搞懂，要连通np.transpose的算法一起搞清楚
+        inv_axis = tuple(np.argsort([ax % axis_len for ax in n_axis]))
+        return transpose(dout, inv_axis)
+
+
+def transpose(x: np.ndarray | Variable | list[int], axis=None):
+    """
+    list[int]代表原生多维数组
+    """
+    return Transpose(axis)(x)
+
+
+# ==========================================================================
+# 张量操作函数
+# ==========================================================================

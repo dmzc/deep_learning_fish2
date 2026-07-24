@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import weakref
-from config import ENABLE_BACKPROGATION
+from dezero_simple.config import ENABLE_BACKPROGATION
 from dataclasses import dataclass
 
 
@@ -179,10 +179,12 @@ def to_tensor(x: any) -> np.ndarray:
     return x
 
 
-def create_variable(args: VariableArgs) -> Variable:
+def create_variable(args: VariableArgs | any) -> Variable:
+    if not isinstance(args, VariableArgs):
+        args = VariableArgs(data=args)
     data = args.data
     if isinstance(data, Variable):
         return data
-    if np.isscalar(data):
+    if np.isscalar(data) or isinstance(data, list) or isinstance(data, tuple):
         args.data = np.array(data)
     return Variable(args)
