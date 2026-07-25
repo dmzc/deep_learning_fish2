@@ -1,9 +1,9 @@
-from dezero_simple import Variable, VariableArgs, F, render, create_variable
+from dezero import IVariable, IVariableArgs, F, render, create_variable
 import numpy as np
 
 
-x: Variable = create_variable(VariableArgs(data=np.pi / 4, name="X", is_input=True))
-y: Variable = F.sin(x)
+x: IVariable = create_variable(IVariableArgs(data=np.pi / 4, name="X", is_input=True))
+y: IVariable = F.sin(x)
 y.backward()
 grad = x.grad
 x.clear_grad()

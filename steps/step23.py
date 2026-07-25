@@ -1,8 +1,8 @@
-from dezero_simple import Variable, VariableArgs, create_variable
+from dezero import IVariable, IVariableArgs, create_variable
 
 
-x = create_variable(VariableArgs(data=1.0))
-y: Variable = (x + 3) ** 2
+x = create_variable(IVariableArgs(data=1.0))
+y: IVariable = (x + 3) ** 2
 y.backward()
 
 print(y)

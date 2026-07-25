@@ -1,5 +1,5 @@
-from dezero_simple.core import Variable
-from dezero_simple.functions import add, mul, neg, sub, rsub, div, rdiv, pow
+from dezero.variable import Variable
+from dezero.function import add, mul, neg, sub, rsub, div, rdiv, pow
 
 
 def _setup():

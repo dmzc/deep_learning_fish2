@@ -1,4 +1,4 @@
-from dezero_simple import F, create_variable, VariableArgs
+from dezero import F, create_variable, IVariableArgs
 import numpy as np
 
 
@@ -10,7 +10,7 @@ def test_reshape():
     result = F.reshape(np.array([1, 2, 3, 4, 5, 6]), (2, 3)).data.tolist()
     assert result == [[1, 2, 3], [4, 5, 6]], "numpy数组正常reshape"
     result = F.reshape(
-        create_variable(VariableArgs(data=[1, 2, 3, 4, 5, 6])), (2, 3)
+        create_variable(IVariableArgs(data=[1, 2, 3, 4, 5, 6])), (2, 3)
     ).data.tolist()
     assert result == [[1, 2, 3], [4, 5, 6]], "variable正常reshape"
 

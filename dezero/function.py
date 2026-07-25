@@ -1,10 +1,57 @@
-import numpy as np
+from __future__ import annotations
 import math
-from dezero_simple.core import Function, Variable
+import numpy as np
+import weakref
+from dezero.config import ENABLE_BACKPROGATION
+from dezero.interfaces import IVariable, IFunction, IVariableArgs
+from dezero.variable import create_variable
+
+
+class Function(IFunction):
+
+    def __init__(self):
+        self.label = self.__class__.__name__
+        self.inputs = None
+        self.outputs = None
+        self.generation = None
+
+    def __call__(self, *xs: tuple[any]) -> list[IVariable] | IVariable:
+        inputs = [create_variable(x) for x in xs]
+        xs_data = [x.data for x in inputs]
+        ys = self.forward(*xs_data)
+        if not isinstance(ys, tuple):
+            ys = (ys,)
+        creator = None
+        if ENABLE_BACKPROGATION:
+            self.generation = max([x.generation for x in inputs])
+            creator = self
+        outputs = [create_variable(IVariableArgs(data=y, creator=creator)) for y in ys]
+        if ENABLE_BACKPROGATION:
+            self.outputs = [weakref.ref(output) for output in outputs]
+            self.inputs = inputs
+        return outputs if len(outputs) > 1 else outputs[0]
+
+    def forward(self, *xs: any) -> any:
+        raise NotImplementedError
+
+    def backward(self, dout: IVariable) -> any:
+        raise NotImplementedError
+
+    @property
+    def id(self) -> str:
+        return f"_{id(self)}_"
+
+    @property
+    def name(self) -> int:
+        ret_name = f"{self.__class__.__name__}"
+        if ENABLE_BACKPROGATION:
+            ret_name = f"{ret_name}({self.generation})"
+
+        return ret_name
 
 
 # ==========================================================================
-# 基础代数函数
+# 基础代数算子
 # ==========================================================================
 class Add(Function):
     """
@@ -14,13 +61,13 @@ class Add(Function):
     def forward(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
         return x1 + x2
 
-    def backward(self, dout: Variable) -> list[Variable]:
+    def backward(self, dout: IVariable) -> list[IVariable]:
         return dout, dout
 
 
-def add(x1: any, x2: any) -> Variable:
+def add(x1: any, x2: any) -> IVariable:
     """
-    x1、x2 - Variable、np.ndarray、数字 反正都会包装成Variable
+    x1、x2 - IVariable、np.ndarray、数字 反正都会包装成IVariable
     """
     return Add()(x1, x2)
 
@@ -33,11 +80,11 @@ class Neg(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return -x
 
-    def backward(self, gy: Variable) -> Variable:
+    def backward(self, gy: IVariable) -> IVariable:
         return -gy
 
 
-def neg(x: any) -> Variable:
+def neg(x: any) -> IVariable:
     return Neg()(x)
 
 
@@ -49,7 +96,7 @@ class Mul(Function):
     def forward(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
         return x1 * x2
 
-    def backward(self, dout: Variable) -> list[Variable]:
+    def backward(self, dout: IVariable) -> list[IVariable]:
         x0, x1 = self.inputs[0], self.inputs[1]
         return x1 * dout, x0 * dout
 
@@ -63,7 +110,7 @@ class Sub(Function):
         y = x0 - x1
         return y
 
-    def backward(self, gy: Variable) -> list[Variable]:
+    def backward(self, gy: IVariable) -> list[IVariable]:
         return gy, -gy
 
 
@@ -87,7 +134,7 @@ class Div(Function):
     def forward(self, x0: np.ndarray, x1: np.ndarray):
         return x0 / x1
 
-    def backward(self, gy: Variable) -> list[Variable]:
+    def backward(self, gy: IVariable) -> list[IVariable]:
         x0, x1 = self.inputs[0], self.inputs[1]
         gx0 = gy / x1
         gx1 = gy * (-x0 / x1**2)
@@ -114,7 +161,7 @@ class Pow(Function):
         y = x**self.c
         return y
 
-    def backward(self, gy: Variable) -> Variable:
+    def backward(self, gy: IVariable) -> IVariable:
         x = self.inputs[0]
         c = self.c
 
@@ -127,12 +174,12 @@ def pow(x: any, c: int):
 
 
 # ==========================================================================
-# 基本代数函数
+# 基本代数算子
 # ==========================================================================
 
 
 # ==========================================================================
-# 基本超越函数
+# 基本超越算子
 # ==========================================================================
 class Sin(Function):
     """
@@ -142,15 +189,15 @@ class Sin(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.sin(x)
 
-    def backward(self, dout: Variable) -> Variable:
+    def backward(self, dout: IVariable) -> IVariable:
         return dout * cos(self.inputs[0])
 
 
-def sin(x: any) -> Variable:
+def sin(x: any) -> IVariable:
     return Sin()(x)
 
 
-def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
+def maclaurin_sin(x: IVariable, threshold=0.0001) -> IVariable:
     """
     麦克劳林展开求sin
     """
@@ -158,7 +205,7 @@ def maclaurin_sin(x: Variable, threshold=0.0001) -> Variable:
     for i in range(100000):
         const: int = 2 * i + 1
         c: float = (-1) ** i / math.factorial(const)
-        t: Variable = c * (x**const)
+        t: IVariable = c * (x**const)
         y = y + t
         if abs(t.data) < threshold:
             break
@@ -173,11 +220,11 @@ class Cos(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.cos(x)
 
-    def backward(self, dout: Variable) -> Variable:
+    def backward(self, dout: IVariable) -> IVariable:
         return dout * -sin(self.inputs[0])
 
 
-def cos(x) -> Variable:
+def cos(x) -> IVariable:
     return Cos()(x)
 
 
@@ -190,13 +237,13 @@ class Tanh(Function):
         y = np.tanh(x)
         return y
 
-    def backward(self, gy: Variable) -> Variable:
+    def backward(self, gy: IVariable) -> IVariable:
         y = self.outputs[0]()  # weakref
         gx = gy * (1 - y * y)
         return gx
 
 
-def tanh(x: any) -> Variable:
+def tanh(x: any) -> IVariable:
     return Tanh()(x)
 
 
@@ -209,7 +256,7 @@ class Exp(Function):
         y = np.exp(x)
         return y
 
-    def backward(self, gy: Variable) -> Variable:
+    def backward(self, gy: IVariable) -> IVariable:
         y = self.outputs[0]()  # weakref
         gx = gy * y
         return gx
@@ -228,7 +275,7 @@ class Log(Function):
         y = np.log(x)
         return y
 
-    def backward(self, gy: Variable) -> Variable:
+    def backward(self, gy: IVariable) -> IVariable:
         x = self.inputs[0]
         gx = gy / x
         return gx
@@ -239,12 +286,12 @@ def log(x):
 
 
 # ==========================================================================
-# 基本超越函数
+# 基本超越算子
 # ==========================================================================
 
 
 # ==========================================================================
-# 张量操作函数
+# 张量形状算子
 # ==========================================================================
 
 
@@ -265,11 +312,11 @@ class Reshape(Function):
         self.__o_shape = x.shape
         return np.reshape(x, self.__n_shape)
 
-    def backward(self, dout: Variable) -> Variable:
+    def backward(self, dout: IVariable) -> IVariable:
         return reshape(dout, self.__o_shape)
 
 
-def reshape(x: np.ndarray | Variable | list[int], shape: tuple[int]) -> Variable:
+def reshape(x: np.ndarray | IVariable | list[int], shape: tuple[int]) -> IVariable:
     """
     list[int]代表原生多维数组
     """
@@ -298,7 +345,7 @@ class Transpose(Function):
     def forward(self, x: np.ndarray):
         return x.transpose(self.__n_axis)
 
-    def backward(self, dout: Variable) -> Variable:
+    def backward(self, dout: IVariable) -> IVariable:
         n_axis = self.__n_axis
         if n_axis is None:
             return transpose(dout)
@@ -308,7 +355,7 @@ class Transpose(Function):
         return transpose(dout, inv_axis)
 
 
-def transpose(x: np.ndarray | Variable | list[int], axis=None):
+def transpose(x: np.ndarray | IVariable | list[int], axis=None):
     """
     list[int]代表原生多维数组
     """
@@ -316,5 +363,33 @@ def transpose(x: np.ndarray | Variable | list[int], axis=None):
 
 
 # ==========================================================================
-# 张量操作函数
+# 张量形状算子
+# ==========================================================================
+
+# ==========================================================================
+# 常用张量算子
+# ==========================================================================
+
+
+class Sum(Function):
+    __keep_dims: bool
+    __axis: tuple[int] | int
+    __o_shape: tuple[int]
+
+    def __init__(self, keep_dims: bool = False, axis: int | tuple[int] | None = None):
+        super().__init__()
+        self.__keep_dims = keep_dims
+        self.__axis = axis
+
+    def forward(self, x: np.ndarray) -> int | float:
+        self.__o_shape = x.shape
+        return np.sum(axis=self.__axis, keepdims=self.__keep_dims)
+
+    def backward(self, dout: IVariable) -> IVariable:
+
+        pass
+
+
+# ==========================================================================
+# 常用张量算子
 # ==========================================================================

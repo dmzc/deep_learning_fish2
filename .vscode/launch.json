@@ -41,8 +41,8 @@
                 // 也可以留空，运行所有测试
                 "-vv",
                 "-s",
-                "--rootdir=./dezero_simple",
-                "--md=./dezero_simple/tests/test_report.md",
+                "--rootdir=./dezero",
+                "--md=./dezero/tests/test_report.md",
             ],
             "console": "integratedTerminal",
             "justMyCode": false

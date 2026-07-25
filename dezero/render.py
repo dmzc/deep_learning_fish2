@@ -1,11 +1,11 @@
-from dezero_simple.core import Variable, Function
+from dezero.interfaces import IFunction, IVariable
 from graphviz import Digraph
 from pathlib import Path
 import os
 import time
 
 
-def render(x: Variable | list[Variable], path: Path = None):
+def render(x: IVariable | list[IVariable], path: Path = None):
 
     # 有向图，从左到右流向LR
     dot = Digraph("signal_flow", format="png")
@@ -21,19 +21,19 @@ def render(x: Variable | list[Variable], path: Path = None):
         align="left",
         margin="0.15,0.1",
     )
-    variables: set = set()
+    IVariables: set = set()
     functions: set = set()
     handled_funtions: set = set()
 
-    def add_node(node: Function, is_variable=True):
+    def add_node(node: IFunction, is_IVariable=True):
         id = node.id
         name = node.name
-        if is_variable:
-            if id not in variables:
-                variables.add(id)
-                variable: Variable = node
+        if is_IVariable:
+            if id not in IVariables:
+                IVariables.add(id)
+                IVariable: IVariable = node
                 fill_color = "white"
-                if variable.is_input:
+                if IVariable.is_input:
                     fill_color = "green"
                 dot.node(
                     name=id,
@@ -62,7 +62,7 @@ def render(x: Variable | list[Variable], path: Path = None):
         else:
             dot.edge(left, right, label=label)
 
-    def process(func: Function):
+    def process(func: IFunction):
         if func is None:
             return
         if func not in handled_funtions:
