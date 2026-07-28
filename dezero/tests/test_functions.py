@@ -1,5 +1,86 @@
-from dezero import F, create_variable, IVariableArgs
+from dezero import F, create_variable, IVariableArgs, IVariable
 import numpy as np
+
+
+def test_basic():
+
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=8.0))
+
+    def reset_variable():
+        v1.clear_grad()
+        v2.clear_grad()
+
+    v3: IVariable = v1 + v2
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 2.0 and v2.grad.data.tolist() == 2.0, "加法反向传播"
+
+    reset_variable()
+    v3: IVariable = -v1
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == -2.0, "加法逆元反向传播"
+
+    reset_variable()
+    v3: IVariable = v1 - v2
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert (
+        v1.grad.data.tolist() == 2.0 and v2.grad.data.tolist() == -2.0
+    ), "减法反向传播"
+
+    reset_variable()
+    v3: IVariable = v1 * v2
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 16 and v2.grad.data.tolist() == 4, "乘法反向传播"
+
+    reset_variable()
+    v3: IVariable = v1**3
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 24, "幂操作反向传播"
+
+
+def test_sin():
+    v1 = create_variable(IVariableArgs(data=0))
+    v3: IVariable = F.sin(v1)
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 2, "sin函数反向传播"
+
+
+def test_cos():
+    v1 = create_variable(IVariableArgs(data=np.pi / 2))
+    v3: IVariable = F.cos(v1)
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == -2, "cos函数反向传播"
+
+
+def test_tanh():
+    v1 = create_variable(IVariableArgs(data=2))
+    v3: IVariable = F.tanh(v1)
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert np.allclose(v1.grad.data.tolist(), 0.1413016), "双曲正切函数反向传播"
+
+
+def test_exp():
+    v1 = create_variable(IVariableArgs(data=0))
+    v3: IVariable = F.exp(v1)
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 2.0, "指数函数反向传播"
+
+
+def test_log():
+    v1 = create_variable(IVariableArgs(data=2))
+    v3: IVariable = F.log(v1)
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 1.0, "对数函数反向传播"
 
 
 def test_reshape():
