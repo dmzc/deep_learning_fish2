@@ -557,6 +557,20 @@ def sum_to(x: np.ndarray, shape: tuple[int]) -> IVariable:
     return SumTo(shape=shape)(x)
 
 
+class Dot(Function):
+
+    def forward(self, x: np.ndarray, w: np.ndarray):
+        return x.dot(w)
+
+    def backward(self, dout: IVariable) -> IVariable:
+        x, w = self.inputs
+        return dot(dout, w.data.T), dot(x.data.T, dout)
+
+
+def dot(x: np.ndarray, w: np.ndarray) -> IVariable:
+    return Dot()(x, w)
+
+
 # ==========================================================================
 # 常用张量算子
 # ==========================================================================

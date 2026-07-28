@@ -289,3 +289,23 @@ def test_broadcast_to():
         ]))
     t_variable.backward(retain_grad=True)
     assert f_variable.grad.data.tolist()==[[2,3,4],[6,7,8]],"反向传播正常"
+
+
+def test_dot():
+    # fmt:off
+    x = create_variable(IVariableArgs(data=[
+        [1, 2, 3], 
+        [4, 5, 6]
+    ]))
+    # fmt:off
+    w = create_variable(IVariableArgs(data=[
+        [1, 1],
+        [2, 2],
+        [3, 3]
+    ]))
+    out: IVariable = F.dot(x, w)
+    assert out.data.tolist() == [[14,14],[32,32]],"矩阵运算结果"
+    out.grad=create_variable(IVariableArgs(data=[[2,2],[3,3]]))
+    out.backward()
+    assert x.grad.data.tolist()==np.dot([[2,2],[3,3]],w.data.T).tolist(),"点乘左边能反向传播"
+    assert w.grad.data.tolist()==np.dot(x.data.T,[[2,2],[3,3]]).tolist(),"点乘右边能反向传播"
