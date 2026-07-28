@@ -2,27 +2,37 @@ from dezero import F, create_variable, IVariableArgs, IVariable
 import numpy as np
 
 
-def test_basic():
-
+def test_add():
     v1 = create_variable(IVariableArgs(data=2.0))
     v2 = create_variable(IVariableArgs(data=8.0))
-
-    def reset_variable():
-        v1.clear_grad()
-        v2.clear_grad()
-
     v3: IVariable = v1 + v2
     v3.grad = create_variable(IVariableArgs(data=2.0))
     v3.backward(retain_grad=True)
     assert v1.grad.data.tolist() == 2.0 and v2.grad.data.tolist() == 2.0, "加法反向传播"
 
-    reset_variable()
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=[[1, 2, 3], [4, 5, 6]]))
+    v3: IVariable = v1 + v2
+    v3.grad = create_variable(IVariableArgs(data=[[1, 1, 1], [3, 3, 3]]))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 12 and v2.grad.data.tolist() == [
+        [1, 1, 1],
+        [3, 3, 3],
+    ], "前向传播发生补全后也能正常反向传播"
+
+
+def test_neg():
+    v1 = create_variable(IVariableArgs(data=2.0))
     v3: IVariable = -v1
     v3.grad = create_variable(IVariableArgs(data=2.0))
     v3.backward(retain_grad=True)
     assert v1.grad.data.tolist() == -2.0, "加法逆元反向传播"
 
-    reset_variable()
+
+def test_sub():
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=8.0))
+
     v3: IVariable = v1 - v2
     v3.grad = create_variable(IVariableArgs(data=2.0))
     v3.backward(retain_grad=True)
@@ -30,13 +40,64 @@ def test_basic():
         v1.grad.data.tolist() == 2.0 and v2.grad.data.tolist() == -2.0
     ), "减法反向传播"
 
-    reset_variable()
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=[[1, 2, 3], [4, 5, 6]]))
+    v3: IVariable = v1 - v2
+    v3.grad = create_variable(IVariableArgs(data=[[1, 1, 1], [3, 3, 3]]))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 12 and v2.grad.data.tolist() == [
+        [-1, -1, -1],
+        [-3, -3, -3],
+    ], "前向传播发生补全后也能正常反向传播"
+
+
+def test_mul():
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=8.0))
+
     v3: IVariable = v1 * v2
     v3.grad = create_variable(IVariableArgs(data=2.0))
     v3.backward(retain_grad=True)
     assert v1.grad.data.tolist() == 16 and v2.grad.data.tolist() == 4, "乘法反向传播"
 
-    reset_variable()
+    v1 = create_variable(IVariableArgs(data=2.0))
+    v2 = create_variable(IVariableArgs(data=[[1, 2, 3], [4, 5, 6]]))
+    v3: IVariable = v1 * v2
+    v3.grad = create_variable(IVariableArgs(data=[[1, 1, 1], [3, 3, 3]]))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 51 and v2.grad.data.tolist() == [
+        [2, 2, 2],
+        [6, 6, 6],
+    ], "前向传播发生补全后也能正常反向传播"
+
+
+def test_div():
+    v1 = create_variable(IVariableArgs(data=8.0))
+    v2 = create_variable(IVariableArgs(data=2.0))
+
+    v3: IVariable = v1 / v2
+    v3.grad = create_variable(IVariableArgs(data=2.0))
+    v3.backward(retain_grad=True)
+    assert v1.grad.data.tolist() == 1 and v2.grad.data.tolist() == -4.0, "乘法反向传播"
+
+    v1 = create_variable(IVariableArgs(data=[[2, 4, 6], [8, 10, 12]]))
+    v2 = create_variable(IVariableArgs(data=2.0))
+    v3: IVariable = v1 / v2
+    v3.grad = create_variable(IVariableArgs(data=[[2, 2, 2], [4, 4, 4]]))
+    v3.backward(retain_grad=True)
+    assert (
+        v1.grad.data.tolist()
+        == [
+            [1.0, 1.0, 1.0],
+            [2.0, 2.0, 2.0],
+        ]
+        and v2.grad.data.tolist() == -36.0
+    ), "前向传播发生补全后也能正常反向传播"
+
+
+def test_pow():
+
+    v1 = create_variable(IVariableArgs(data=2.0))
     v3: IVariable = v1**3
     v3.grad = create_variable(IVariableArgs(data=2.0))
     v3.backward(retain_grad=True)

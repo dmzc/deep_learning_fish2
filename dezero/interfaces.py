@@ -2,9 +2,10 @@ from __future__ import annotations
 import numpy as np
 import weakref
 from dataclasses import dataclass
+from abc import ABC
 
 
-class IVariable:
+class IVariable(ABC):
 
     is_input: bool
     data: np.ndarray
@@ -36,7 +37,7 @@ class IVariable:
     def backward(self, retain_grad=False) -> None: ...
 
 
-class IFunction:
+class IFunction(ABC):
     inputs: list[IVariable]
     outputs: list[weakref.ref[IVariable]]
     label: str

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import abstractmethod
 import math
 import numpy as np
 import weakref
@@ -7,6 +8,9 @@ from dezero.interfaces import IVariable, IFunction, IVariableArgs
 from dezero.variable import create_variable
 
 
+# ==========================================================================
+# 算子基类
+# ==========================================================================
 class Function(IFunction):
 
     def __init__(self):
@@ -50,18 +54,62 @@ class Function(IFunction):
         return ret_name
 
 
+class UrayFunction(Function):
+    """
+    二元逐元素算子基类。
+    底层基于 np.ndarray，前向计算遵循 NumPy 广播规则：
+    1. 形状从尾部（最右侧维度）对齐，维度数量更少的张量在左侧补长度为1的维度；
+    2. 维度补齐后，对应位置的维度尺寸必须相等，或其中一方尺寸为1；
+    不满足条件则无法广播，触发形状异常。
+    """
+
+    __x1_shape: tuple[int]
+    __x2_shape: tuple[int]
+
+    def __init__(self):
+        super().__init__()
+        self.__x1_shape = None
+        self.__x2_shape = None
+
+    def forward(self, x1: np.ndarray, x2: np.ndarray):
+        self.__x1_shape = x1.shape
+        self.__x2_shape = x2.shape
+
+    def backward(self, dout: IVariable) -> list[IVariable]:
+        dx1, dx2 = self.get_gradient(dout=dout)
+        x1_shape = self.__x1_shape
+        x2_shape = self.__x2_shape
+        if x1_shape != x2_shape:
+            return sum_to(dx1, x1_shape), sum_to(dx2, x2_shape)
+        return dx1, dx2
+
+    @abstractmethod
+    def get_gradient(self, dout: IVariable) -> tuple[IVariable]: ...
+
+
+# ==========================================================================
+# 算子基类
+# ==========================================================================
+
+
 # ==========================================================================
 # 基础代数算子
 # ==========================================================================
-class Add(Function):
+
+
+class Add(UrayFunction):
     """
     加法
     """
 
+    def __init__(self):
+        super().__init__()
+
     def forward(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+        super().forward(x1, x2)
         return x1 + x2
 
-    def backward(self, dout: IVariable) -> list[IVariable]:
+    def get_gradient(self, dout):
         return dout, dout
 
 
@@ -88,15 +136,16 @@ def neg(x: any) -> IVariable:
     return Neg()(x)
 
 
-class Mul(Function):
+class Mul(UrayFunction):
     """
     乘法
     """
 
     def forward(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+        super().forward(x1=x1, x2=x2)
         return x1 * x2
 
-    def backward(self, dout: IVariable) -> list[IVariable]:
+    def get_gradient(self, dout):
         x0, x1 = self.inputs[0], self.inputs[1]
         return x1 * dout, x0 * dout
 
@@ -105,13 +154,14 @@ def mul(x1: any, x2: any):
     return Mul()(x1, x2)
 
 
-class Sub(Function):
+class Sub(UrayFunction):
     def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
+        super().forward(x1=x0, x2=x1)
         y = x0 - x1
         return y
 
-    def backward(self, gy: IVariable) -> list[IVariable]:
-        return gy, -gy
+    def get_gradient(self, dout: IVariable) -> list[IVariable]:
+        return dout, -dout
 
 
 def sub(x0: any, x1: any):
@@ -126,18 +176,19 @@ def rsub(x0: any, x1: any):
     return Sub()(x1, x0)
 
 
-class Div(Function):
+class Div(UrayFunction):
     """
     除法
     """
 
     def forward(self, x0: np.ndarray, x1: np.ndarray):
+        super().forward(x1=x0, x2=x1)
         return x0 / x1
 
-    def backward(self, gy: IVariable) -> list[IVariable]:
+    def get_gradient(self, dout: IVariable):
         x0, x1 = self.inputs[0], self.inputs[1]
-        gx0 = gy / x1
-        gx1 = gy * (-x0 / x1**2)
+        gx0 = dout / x1
+        gx1 = dout * (-x0 / x1**2)
         return gx0, gx1
 
 
