@@ -14,6 +14,17 @@ def test_reshape():
     ).data.tolist()
     assert result == [[1, 2, 3], [4, 5, 6]], "variable正常reshape"
 
+    f_variable = create_variable(IVariableArgs(data=[1, 2, 3, 4, 5, 6]))
+    t_variable = F.reshape(f_variable, (2, 3))
+    # fmt:off
+    t_variable.grad=create_variable(
+        IVariableArgs(data=[
+            [1,2,3],
+            [4,5,6]
+    ]))
+    t_variable.backward(retain_grad=True)
+    assert f_variable.grad.data.tolist()==[1,2,3,4,5,6],"反向传播正常"
+
 
 def test_transpose():
     result = F.transpose([[1, 2, 3], [4, 5, 6]]).data.tolist()
@@ -43,3 +54,96 @@ def test_transpose():
             [7, 9, 11]
         ]
     ], "交换轴"
+    
+    f_variable = create_variable(IVariableArgs(data=([[1, 2, 3], [4, 5, 6]])))
+    t_variable = F.transpose(f_variable)
+    # fmt:off
+    t_variable.grad=create_variable(
+        IVariableArgs(data=[[1, 2], [3, 4], [5, 6]]))
+    t_variable.backward(retain_grad=True)
+    assert f_variable.grad.data.tolist()==[[1,3,5],[2,4,6]],"反向传播正常"
+
+
+def test_sum_to():
+    # fmt:off
+    assert F.sum_to([
+            [1, 2], 
+            [3, 4]
+        ], (2, 2)).data.tolist() == [
+            [1, 2],
+            [3, 4]
+        ], "形状相同无操作"
+    # fmt:off
+    assert F.sum_to([
+            [1, 2], 
+            [3, 4]
+        ], (1, 2)).data.tolist() == [
+            [4,6]
+        ], "按第一维度求和"
+    # fmt:off
+    assert F.sum_to([
+            [1, 2], 
+            [3, 4]
+        ], (2, 1)).data.tolist() == [
+            [3],
+            [7]
+        ], "按第二维度求和"
+
+    # fmt:off
+    assert F.sum_to([
+            [
+                [1,2,3], 
+                [3,4,5]
+            ], 
+            [
+                [6,7,8],
+                [9,10,11]
+            ]
+        ], (2,3)).data.tolist() == [
+            [7,9,11],
+            [12,14,16]
+        ], "压缩维度"
+    f_variable = create_variable(IVariableArgs(data=([[1, 2, 3], [4, 5, 6]])))
+    t_variable = F.sum_to(f_variable,(2,1))
+    # fmt:off
+    t_variable.grad=create_variable(
+        IVariableArgs(data=[[1],[2]]))
+    t_variable.backward(retain_grad=True)
+    assert f_variable.grad.data.tolist()==[[1,1,1],[2,2,2]],"反向传播正常"
+
+
+def test_broadcast_to():
+    assert F.broadcast_to([[1], [2]], (2, 3)).data.tolist() == [
+        [1, 1, 1],
+        [2, 2, 2],
+    ], "按第二维度扩充"
+    assert F.broadcast_to([[1, 2, 4]], (2, 3)).data.tolist() == [
+        [1, 2, 4],
+        [1, 2, 4],
+    ], "按第一维度扩充"
+    assert F.broadcast_to([[1, 2, 3], [4, 5, 6]], (2, 2, 3)).data.tolist() == [
+        [
+            [1, 2, 3],
+            [4, 5, 6],
+        ],
+        [
+            [1, 2, 3],
+            [4, 5, 6],
+        ],
+    ], "维度长度不足时会在前补充"
+    f_variable = create_variable(IVariableArgs(data=([[1, 2, 3], [4, 5, 6]])))
+    t_variable = F.broadcast_to(f_variable, (2, 2, 3))
+    # fmt:off
+    t_variable.grad=create_variable(
+        IVariableArgs(data=[
+            [
+                [1,2,3],
+                [4,5,6]
+            ],
+            [
+                [1,1,1],
+                [2,2,2]
+            ]
+        ]))
+    t_variable.backward(retain_grad=True)
+    assert f_variable.grad.data.tolist()==[[2,3,4],[6,7,8]],"反向传播正常"

@@ -336,30 +336,30 @@ class Transpose(Function):
     x.shape # (4, 3, 2)
     """
 
-    __n_axis: tuple[int]
+    __n_axes: tuple[int]
 
-    def __init__(self, n_axis=None):
+    def __init__(self, n_axes=None):
         super().__init__()
-        self.__n_axis = n_axis
+        self.__n_axes = n_axes
 
     def forward(self, x: np.ndarray):
-        return x.transpose(self.__n_axis)
+        return x.transpose(self.__n_axes)
 
     def backward(self, dout: IVariable) -> IVariable:
-        n_axis = self.__n_axis
-        if n_axis is None:
+        n_axes = self.__n_axes
+        if n_axes is None:
             return transpose(dout)
-        axis_len = len(n_axis)
+        axis_len = len(n_axes)
         # TODO:这里没搞懂，要连通np.transpose的算法一起搞清楚
-        inv_axis = tuple(np.argsort([ax % axis_len for ax in n_axis]))
+        inv_axis = tuple(np.argsort([ax % axis_len for ax in n_axes]))
         return transpose(dout, inv_axis)
 
 
-def transpose(x: np.ndarray | IVariable | list[int], axis=None):
+def transpose(x: np.ndarray | IVariable | list[int], axes=None):
     """
     list[int]代表原生多维数组
     """
-    return Transpose(axis)(x)
+    return Transpose(axes)(x)
 
 
 # ==========================================================================
@@ -372,22 +372,138 @@ def transpose(x: np.ndarray | IVariable | list[int], axis=None):
 
 
 class Sum(Function):
-    __keep_dims: bool
-    __axis: tuple[int] | int
-    __o_shape: tuple[int]
+    __keepdims: bool
+    __axes: tuple[int] | int
+    __from_shape: tuple[int]
 
-    def __init__(self, keep_dims: bool = False, axis: int | tuple[int] | None = None):
+    def __init__(self, keep_dims: bool = False, axes: int | tuple[int] | None = None):
         super().__init__()
-        self.__keep_dims = keep_dims
-        self.__axis = axis
+        self.__keepdims = keep_dims
+        self.__axes = axes
 
     def forward(self, x: np.ndarray) -> int | float:
-        self.__o_shape = x.shape
-        return np.sum(axis=self.__axis, keepdims=self.__keep_dims)
+        self.__from_shape = x.shape
+        return np.sum(axis=self.__axes, keepdims=self.__keepdims)
 
     def backward(self, dout: IVariable) -> IVariable:
+        keepdims = self.__keepdims
+        axes = self.__axes
+        from_shape = self.__from_shape
+        if keepdims:  # 正向传播时求和维度的没有被删除，直接reshape即可
+            return broadcast_to(dout, from_shape)
+        if axes is None:  # 所有轴求和，dout此时是一个标量，直接广播即可
+            return broadcast_to(dout, from_shape)
+        to_shape: list[int] = list[dout.shape]
+        # 补全被删去的求和维度
+        # 比如：原来（2，3，4，5，6)，按轴（1，3）求和得到（2，4，6）
+        # 还原时需要先还原小索引，这样才不至于破坏后面的所有
+        for axis in sorted(axes):
+            to_shape.insert(axis, 1)
+        return broadcast_to(reshape(dout, tuple(to_shape)), from_shape)
 
-        pass
+
+def sum(x: any, axes: tuple[int] | int = None, keepdims=False) -> IVariable:
+
+    return Sum(axes=axes, keep_dims=keepdims)(x)
+
+
+class BroadcastTo(Function):
+    """
+    广播扩展算子
+    from_shape - 扩展前张量形状
+    to_shape   - 目标扩展形状
+
+    两条约束（遵循标准张量右对齐广播规则）：
+    1. len(from_shape) <= len(to_shape)；
+       若from_shape维度更少，则在左侧（前置）自动补长度为1的维度；
+    2. 两个形状执行右对齐；对齐后的每一维，尺寸必须相等，或from_shape对应维度尺寸为1。
+    """
+
+    __from_shape: tuple[int]
+    __to_shape: tuple[int]
+
+    def __init__(self, shape: tuple[int]):
+        super().__init__()
+        self.__to_shape = shape
+        self.__from_shape = None
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        from_shape = self.__from_shape = x.shape
+        if from_shape == self.__to_shape:
+            return x
+        return np.broadcast_to(x, self.__to_shape)
+
+    def backward(self, dout: IVariable) -> IVariable:
+        return sum_to(dout, self.__from_shape)
+
+
+def broadcast_to(x: np.ndarray, shape: tuple[int]) -> IVariable:
+    return BroadcastTo(shape=shape)(x)
+
+
+class SumTo(Function):
+    """
+    规约对齐求和算子
+
+    shape - 求和前的维度
+
+    to_shape - 求和后的维度
+
+    有一下两点约束：
+
+    1. len(shape) >= len(to_shape)，对于前置多的维度，会被压缩掉
+    2. 形状按右对齐，每个维度要想等或to_shape维度为1
+
+    """
+
+    __from_shape: tuple[int]  # 原始形状
+
+    __to_shape: tuple[int]  # 要规约到的形状
+
+    def __init__(self, shape: tuple[int]):
+        super().__init__()
+        self.__to_shape = shape
+        self.__from_shape = None
+
+    def _raise_invalid_ndim_error(shape: tuple[int], to_shape: tuple[int]) -> None:
+        raise ValueError(
+            f"不符合SumTo的形状规则：\n原始形状：{shape}\n目标形状：{to_shape}"
+        )
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+
+        f_shape = self.__from_shape = x.shape
+        t_shape = self.__to_shape
+        if f_shape == t_shape:
+            return x
+        f_ndim = len(f_shape)
+        t_ndim = len(t_shape)
+        diff = f_ndim - t_ndim
+        if diff < 0:
+            self._raise_invalid_ndim_error()
+
+        sum_axes: list[int] = list(range(diff))  # 那些轴要求和，前面多的维度肯定要求和
+
+        for f_index in range(diff, f_ndim):
+            t_dim = t_shape[f_index - diff]
+            if f_shape[f_index] == t_dim:
+                continue
+            if t_dim == 1:
+                sum_axes.append(f_index)
+                continue
+            # 目标维既不是1，也不相等，无法处理
+            self._raise_invalid_ndim_error()
+        result: np.ndarray = np.sum(x, axis=tuple(sum_axes), keepdims=True)
+        if diff > 0:  # 前面多的维度被压缩了，要裁剪掉
+            result = result.squeeze()
+        return result
+
+    def backward(self, dout: IVariable) -> IVariable:
+        return broadcast_to(dout, self.__from_shape)
+
+
+def sum_to(x: np.ndarray, shape: tuple[int]) -> IVariable:
+    return SumTo(shape=shape)(x)
 
 
 # ==========================================================================
