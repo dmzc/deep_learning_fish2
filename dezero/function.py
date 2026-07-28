@@ -430,11 +430,14 @@ class Sum(Function):
     def __init__(self, keep_dims: bool = False, axes: int | tuple[int] | None = None):
         super().__init__()
         self.__keepdims = keep_dims
-        self.__axes = axes
+        if axes is not None:
+            self.__axes = tuple(axes)
+        else:
+            self.__axes = None
 
     def forward(self, x: np.ndarray) -> int | float:
         self.__from_shape = x.shape
-        return np.sum(axis=self.__axes, keepdims=self.__keepdims)
+        return np.sum(x, axis=self.__axes, keepdims=self.__keepdims)
 
     def backward(self, dout: IVariable) -> IVariable:
         keepdims = self.__keepdims
@@ -444,7 +447,7 @@ class Sum(Function):
             return broadcast_to(dout, from_shape)
         if axes is None:  # 所有轴求和，dout此时是一个标量，直接广播即可
             return broadcast_to(dout, from_shape)
-        to_shape: list[int] = list[dout.shape]
+        to_shape: list[int] = list(dout.shape)
         # 补全被删去的求和维度
         # 比如：原来（2，3，4，5，6)，按轴（1，3）求和得到（2，4，6）
         # 还原时需要先还原小索引，这样才不至于破坏后面的所有

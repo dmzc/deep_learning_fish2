@@ -291,6 +291,29 @@ def test_broadcast_to():
     assert f_variable.grad.data.tolist()==[[2,3,4],[6,7,8]],"反向传播正常"
 
 
+def test_sum():
+    v1 = create_variable(IVariableArgs(data=[[1, 2], [3, 4]]))
+    v2 = F.sum(v1)
+    v2.grad = create_variable(IVariableArgs(data=3.0))
+    v2.backward(retain_grad=True)
+    assert v2.data.tolist() == 10, "无参数求和"
+    assert v1.grad.data.tolist() == [[3.0, 3.0], [3.0, 3.0]], "无参数求和反向传播"
+
+    v1.clear_grad()
+    v2 = F.sum(v1, axes=(1,))
+    v2.grad = create_variable(IVariableArgs(data=[4.0, 5.0]))
+    v2.backward(retain_grad=True)
+    assert v2.data.tolist() == [3, 7], "按维度2求和"
+    assert v1.grad.data.tolist() == [[4.0, 4.0], [5.0, 5.0]], "按维度2求和反向传播"
+
+    v1.clear_grad()
+    v2 = F.sum(v1, axes=(1,), keepdims=True)
+    v2.grad = create_variable(IVariableArgs(data=[[4.0], [5.0]]))
+    v2.backward(retain_grad=True)
+    assert v2.data.tolist() == [[3], [7]], "keepdims为true"
+    assert v1.grad.data.tolist() == [[4.0, 4.0], [5.0, 5.0]], "keepdims为true反向传播"
+
+
 def test_dot():
     # fmt:off
     x = create_variable(IVariableArgs(data=[
