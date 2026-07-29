@@ -5,8 +5,8 @@ from dezero import F, create_variable, IVariable, IVariableArgs
 
 
 np.random.seed(0)
-x: IVariable = create_variable(IVariableArgs(data=np.random.rand(100, 1)))
-y: IVariable = 5 + 2 * x + np.random.rand(100, 1)
+x: np.ndarray = np.random.rand(100, 1)
+y: np.ndarray = 5 + 2 * x + np.random.rand(100, 1)
 
 W = create_variable(IVariableArgs(data=np.zeros((1, 1))))
 b = create_variable(IVariableArgs(data=np.zeros((1, 1))))
@@ -30,11 +30,11 @@ for cnt in range(iters):
     print(f"W:{W.data}    b:{b.data}")
 
 
-plt.scatter(x.data, y.data, s=10)
+plt.scatter(x, y, s=10)
 plt.xlabel("x")
 plt.ylabel("y")
 
 y_pred: IVariable = F.dot(x, w=W) + b
-plt.plot(x.data, y_pred.data, color="r")
+plt.plot(x, y_pred.data, color="r")
 
 plt.show()

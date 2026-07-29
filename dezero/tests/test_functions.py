@@ -338,7 +338,7 @@ def test_mean_square_loss():
     y_actual = create_variable(IVariableArgs(data=[1, 2, 3, 5, 5]))
     y_expect = create_variable(IVariableArgs(data=[2, 1, 5, 7, 3]))
     out: IVariable = F.mean_square_loss(y_actual=y_actual, y_expect=y_expect)
-    assert out.data.tolist() == 2.8, "均方误差运算结果"
+    assert out.data.tolist() == 2.8, "均方误差损失函数运算结果"
     out.grad = create_variable(IVariableArgs(data=5.0))
     out.backward(retain_grad=True)
     assert y_actual.grad.data.tolist() == [
@@ -347,4 +347,13 @@ def test_mean_square_loss():
         -4.0,
         -4.0,
         4.0,
-    ], "均方误差能反向传播"
+    ], "均方误差损失函数能反向传播"
+
+
+def test_sigmoid():
+    x = create_variable(IVariableArgs(data=[0]))
+    out: IVariable = F.sigmoid(x)
+    assert out.data.tolist() == [0.5], "sigmoid激活函数运算结果"
+    out.grad = create_variable(IVariableArgs(data=8.0))
+    out.backward(retain_grad=True)
+    assert x.grad.data.tolist() == [2.0], "sigmoid激活函数能反向传播"
