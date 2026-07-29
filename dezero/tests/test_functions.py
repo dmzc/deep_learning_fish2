@@ -1,4 +1,4 @@
-from dezero import F, create_variable, IVariableArgs, IVariable
+from dezero import F, create_variable, IVariableArgs, IVariable, render
 import numpy as np
 
 
@@ -332,3 +332,19 @@ def test_dot():
     out.backward()
     assert x.grad.data.tolist()==np.dot([[2,2],[3,3]],w.data.T).tolist(),"点乘左边能反向传播"
     assert w.grad.data.tolist()==np.dot(x.data.T,[[2,2],[3,3]]).tolist(),"点乘右边能反向传播"
+
+
+def test_mean_square_loss():
+    y_actual = create_variable(IVariableArgs(data=[1, 2, 3, 5, 5]))
+    y_expect = create_variable(IVariableArgs(data=[2, 1, 5, 7, 3]))
+    out: IVariable = F.mean_square_loss(y_actual=y_actual, y_expect=y_expect)
+    assert out.data.tolist() == 2.8, "均方误差运算结果"
+    out.grad = create_variable(IVariableArgs(data=5.0))
+    out.backward(retain_grad=True)
+    assert y_actual.grad.data.tolist() == [
+        -2.0,
+        2.0,
+        -4.0,
+        -4.0,
+        4.0,
+    ], "均方误差能反向传播"

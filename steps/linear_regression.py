@@ -17,7 +17,8 @@ iters = 100
 for cnt in range(iters):
     y_pred: IVariable = F.dot(x, W) + b
     diff: IVariable = y - y_pred
-    loss: IVariable = F.sum((y - y_pred) ** 2) / len(diff)
+    # loss: IVariable = F.sum((y - y_pred) ** 2) / len(diff)
+    loss: IVariable = F.mean_square_loss(y, y_pred)
     print(f"第{cnt+1}损失：{loss}")
 
     W.clear_grad()
@@ -26,6 +27,7 @@ for cnt in range(iters):
 
     W.data -= lr * W.grad.data
     b.data -= lr * b.grad.data
+    print(f"W:{W.data}    b:{b.data}")
 
 
 plt.scatter(x.data, y.data, s=10)

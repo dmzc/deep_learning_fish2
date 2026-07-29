@@ -577,3 +577,29 @@ def dot(x: np.ndarray, w: np.ndarray) -> IVariable:
 # ==========================================================================
 # 常用张量算子
 # ==========================================================================
+
+
+# ==========================================================================
+# 损失函数
+# ==========================================================================
+
+
+class MeanSquareLoss(Function):
+    def forward(self, y_actual: np.ndarray, y_expect: np.ndarray) -> np.ndarray:
+        diff: np.ndarray = y_actual - y_expect
+        return np.sum((diff) ** 2) / diff.shape[0]
+
+    def backward(self, dout: IVariable) -> IVariable:
+        y_acutal, y_expect = self.inputs
+        diff: IVariable = y_acutal - y_expect
+        dy_actual = dout * 2 * diff / diff.shape[0]
+        return dy_actual, -dy_actual
+
+
+def mean_square_loss(y_actual, y_expect) -> IVariable:
+    return MeanSquareLoss()(y_actual, y_expect)
+
+
+# ==========================================================================
+# 损失函数
+# ==========================================================================
