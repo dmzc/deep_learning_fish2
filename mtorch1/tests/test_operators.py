@@ -1,4 +1,4 @@
-from mtorch import F, Tensor, ITensor
+from mtorch1 import F, Tensor, ITensor
 import numpy as np
 
 

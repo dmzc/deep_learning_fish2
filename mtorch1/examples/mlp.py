@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mtorch import Sequential, Linear, Sigmoid, SGD, MeanSquareLoss, ITensor
+from mtorch1 import Sequential, Linear, Sigmoid, SGD, MeanSquareLoss, ITensor
 
 np.random.seed(0)
 

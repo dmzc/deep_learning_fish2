@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from mtorch.config import ENABLE_BACKPROGATION
-from mtorch.interfaces import ITensor, IOperator
+from mtorch1.config import ENABLE_BACKPROGATION
+from mtorch1.interfaces import ITensor, IOperator
 
 
 class Tensor(ITensor):

@@ -1,9 +1,9 @@
-from mtorch.interfaces import ITensor
-from mtorch.tensor import Tensor
-import mtorch.operator as F
-from mtorch.render import render
-from mtorch.nn import Module, Sequential, Linear, Sigmoid, MeanSquareLoss
-from mtorch.optim import SGD
+from mtorch1.interfaces import ITensor
+from mtorch1.tensor import Tensor
+import mtorch1.operator as F
+from mtorch1.render import render
+from mtorch1.nn import Module, Sequential, Linear, Sigmoid, MeanSquareLoss
+from mtorch1.optim import SGD
 
 __version__ = "0.0.13"
 

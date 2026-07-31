@@ -1,2 +1,0 @@
-# 是否启用反向传播
-ENABLE_BACKPROGATION = True

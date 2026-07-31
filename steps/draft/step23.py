@@ -1,4 +1,4 @@
-from mtorch import ITensor, Tensor
+from mtorch1 import ITensor, Tensor
 
 
 x = Tensor(data=1.0)

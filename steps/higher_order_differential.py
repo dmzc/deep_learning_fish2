@@ -1,4 +1,4 @@
-from mtorch import ITensor, F, render, Tensor
+from mtorch1 import ITensor, F, render, Tensor
 import numpy as np
 
 # 测试高阶导

@@ -1,4 +1,4 @@
-from mtorch import ITensor, render, F, Tensor
+from mtorch1 import ITensor, render, F, Tensor
 from pathlib import Path
 import numpy as np
 

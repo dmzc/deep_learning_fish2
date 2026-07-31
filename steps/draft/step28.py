@@ -1,4 +1,4 @@
-from mtorch import ITensor, Tensor
+from mtorch1 import ITensor, Tensor
 
 
 def rosenbrock(x0: ITensor, x1: ITensor) -> ITensor:

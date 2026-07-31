@@ -1,6 +1,6 @@
 from .module import Module
-import mtorch.operator as F
-from mtorch.interfaces import ITensor
+import mtorch1.operator as F
+from mtorch1.interfaces import ITensor
 
 # 激活层
 

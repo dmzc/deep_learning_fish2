@@ -1,4 +1,4 @@
-from mtorch import ITensor, render, Tensor
+from mtorch1 import ITensor, render, Tensor
 from pathlib import Path
 
 current_file = Path(__file__)

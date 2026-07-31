@@ -1,7 +1,7 @@
 # 使用dezero实现线性回归
 import numpy as np
 import matplotlib.pyplot as plt
-from mtorch import F, Tensor, ITensor
+from mtorch1 import F, Tensor, ITensor
 
 
 np.random.seed(0)
