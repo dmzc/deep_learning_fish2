@@ -3,15 +3,15 @@ from abc import abstractmethod
 import math
 import numpy as np
 import weakref
-from dezero.config import ENABLE_BACKPROGATION
-from dezero.interfaces import IVariable, IFunction, IVariableArgs
-from dezero.variable import create_variable
+from mtorch.config import ENABLE_BACKPROGATION
+from mtorch.interfaces import ITensor, IOperator
+from mtorch.tensor import Tensor
 
 
 # ==========================================================================
 # 算子基类
 # ==========================================================================
-class Function(IFunction):
+class Operator(IOperator):
 
     def __init__(self):
         self.label = self.__class__.__name__
@@ -19,8 +19,13 @@ class Function(IFunction):
         self.outputs = None
         self.generation = None
 
-    def __call__(self, *xs: tuple[any]) -> list[IVariable] | IVariable:
-        inputs = [create_variable(x) for x in xs]
+    def __call__(self, *xs: tuple[any]) -> list[ITensor] | ITensor:
+        inputs = []
+        for x in xs:
+            if isinstance(x, Tensor):
+                inputs.append(x)
+            else:
+                inputs.append(Tensor(x))
         xs_data = [x.data for x in inputs]
         ys = self.forward(*xs_data)
         if not isinstance(ys, tuple):
@@ -29,7 +34,7 @@ class Function(IFunction):
         if ENABLE_BACKPROGATION:
             self.generation = max([x.generation for x in inputs])
             creator = self
-        outputs = [create_variable(IVariableArgs(data=y, creator=creator)) for y in ys]
+        outputs = [Tensor(data=y, creator=creator) for y in ys]
         if ENABLE_BACKPROGATION:
             self.outputs = [weakref.ref(output) for output in outputs]
             self.inputs = inputs
@@ -38,7 +43,7 @@ class Function(IFunction):
     def forward(self, *xs: any) -> any:
         raise NotImplementedError
 
-    def backward(self, dout: IVariable) -> any:
+    def backward(self, dout: ITensor) -> any:
         raise NotImplementedError
 
     @property
@@ -54,7 +59,7 @@ class Function(IFunction):
         return ret_name
 
 
-class UrayFunction(Function):
+class UrayOperator(Operator):
     """
     二元逐元素算子基类。
     底层基于 np.ndarray，前向计算遵循 NumPy 广播规则：
@@ -75,7 +80,7 @@ class UrayFunction(Function):
         self.__x1_shape = x1.shape
         self.__x2_shape = x2.shape
 
-    def backward(self, dout: IVariable) -> list[IVariable]:
+    def backward(self, dout: ITensor) -> list[ITensor]:
         dx1, dx2 = self.get_gradient(dout=dout)
         x1_shape = self.__x1_shape
         x2_shape = self.__x2_shape
@@ -84,7 +89,7 @@ class UrayFunction(Function):
         return dx1, dx2
 
     @abstractmethod
-    def get_gradient(self, dout: IVariable) -> tuple[IVariable]: ...
+    def get_gradient(self, dout: ITensor) -> tuple[ITensor]: ...
 
 
 # ==========================================================================
@@ -97,7 +102,7 @@ class UrayFunction(Function):
 # ==========================================================================
 
 
-class Add(UrayFunction):
+class Add(UrayOperator):
     """
     加法
     """
@@ -113,14 +118,14 @@ class Add(UrayFunction):
         return dout, dout
 
 
-def add(x1: any, x2: any) -> IVariable:
+def add(x1: any, x2: any) -> ITensor:
     """
     x1、x2 - IVariable、np.ndarray、数字 反正都会包装成IVariable
     """
     return Add()(x1, x2)
 
 
-class Neg(Function):
+class Neg(Operator):
     """
     加法逆元
     """
@@ -128,15 +133,15 @@ class Neg(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return -x
 
-    def backward(self, gy: IVariable) -> IVariable:
+    def backward(self, gy: ITensor) -> ITensor:
         return -gy
 
 
-def neg(x: any) -> IVariable:
+def neg(x: any) -> ITensor:
     return Neg()(x)
 
 
-class Mul(UrayFunction):
+class Mul(UrayOperator):
     """
     乘法
     """
@@ -154,13 +159,13 @@ def mul(x1: any, x2: any):
     return Mul()(x1, x2)
 
 
-class Sub(UrayFunction):
+class Sub(UrayOperator):
     def forward(self, x0: np.ndarray, x1: np.ndarray) -> np.ndarray:
         super().forward(x1=x0, x2=x1)
         y = x0 - x1
         return y
 
-    def get_gradient(self, dout: IVariable) -> list[IVariable]:
+    def get_gradient(self, dout: ITensor) -> list[ITensor]:
         return dout, -dout
 
 
@@ -176,7 +181,7 @@ def rsub(x0: any, x1: any):
     return Sub()(x1, x0)
 
 
-class Div(UrayFunction):
+class Div(UrayOperator):
     """
     除法
     """
@@ -185,7 +190,7 @@ class Div(UrayFunction):
         super().forward(x1=x0, x2=x1)
         return x0 / x1
 
-    def get_gradient(self, dout: IVariable):
+    def get_gradient(self, dout: ITensor):
         x0, x1 = self.inputs[0], self.inputs[1]
         gx0 = dout / x1
         gx1 = dout * (-x0 / x1**2)
@@ -200,7 +205,7 @@ def rdiv(x0: any, x1: any):
     return Div()(x1, x0)
 
 
-class Pow(Function):
+class Pow(Operator):
     """
     乘幂
     """
@@ -212,7 +217,7 @@ class Pow(Function):
         y = x**self.c
         return y
 
-    def backward(self, gy: IVariable) -> IVariable:
+    def backward(self, gy: ITensor) -> ITensor:
         x = self.inputs[0]
         c = self.c
 
@@ -232,7 +237,7 @@ def pow(x: any, c: int):
 # ==========================================================================
 # 基本超越算子
 # ==========================================================================
-class Sin(Function):
+class Sin(Operator):
     """
     正弦
     """
@@ -240,15 +245,15 @@ class Sin(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.sin(x)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         return dout * cos(self.inputs[0])
 
 
-def sin(x: any) -> IVariable:
+def sin(x: any) -> ITensor:
     return Sin()(x)
 
 
-def maclaurin_sin(x: IVariable, threshold=0.0001) -> IVariable:
+def maclaurin_sin(x: ITensor, threshold=0.0001) -> ITensor:
     """
     麦克劳林展开求sin
     """
@@ -256,14 +261,14 @@ def maclaurin_sin(x: IVariable, threshold=0.0001) -> IVariable:
     for i in range(100000):
         const: int = 2 * i + 1
         c: float = (-1) ** i / math.factorial(const)
-        t: IVariable = c * (x**const)
+        t: ITensor = c * (x**const)
         y = y + t
         if abs(t.data) < threshold:
             break
     return y
 
 
-class Cos(Function):
+class Cos(Operator):
     """
     余弦
     """
@@ -271,15 +276,15 @@ class Cos(Function):
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.cos(x)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         return dout * -sin(self.inputs[0])
 
 
-def cos(x) -> IVariable:
+def cos(x) -> ITensor:
     return Cos()(x)
 
 
-class Tanh(Function):
+class Tanh(Operator):
     """
     双曲正切
     """
@@ -288,17 +293,17 @@ class Tanh(Function):
         y = np.tanh(x)
         return y
 
-    def backward(self, gy: IVariable) -> IVariable:
+    def backward(self, gy: ITensor) -> ITensor:
         y = self.outputs[0]()  # weakref
         gx = gy * (1 - y * y)
         return gx
 
 
-def tanh(x: any) -> IVariable:
+def tanh(x: any) -> ITensor:
     return Tanh()(x)
 
 
-class Exp(Function):
+class Exp(Operator):
     """
     指数函数
     """
@@ -307,7 +312,7 @@ class Exp(Function):
         y = np.exp(x)
         return y
 
-    def backward(self, gy: IVariable) -> IVariable:
+    def backward(self, gy: ITensor) -> ITensor:
         y = self.outputs[0]()  # weakref
         gx = gy * y
         return gx
@@ -317,7 +322,7 @@ def exp(x):
     return Exp()(x)
 
 
-class Log(Function):
+class Log(Operator):
     """
     对数函数
     """
@@ -326,7 +331,7 @@ class Log(Function):
         y = np.log(x)
         return y
 
-    def backward(self, gy: IVariable) -> IVariable:
+    def backward(self, gy: ITensor) -> ITensor:
         x = self.inputs[0]
         gx = gy / x
         return gx
@@ -346,7 +351,7 @@ def log(x):
 # ==========================================================================
 
 
-class Reshape(Function):
+class Reshape(Operator):
     """
     张量形状变更
     """
@@ -363,18 +368,18 @@ class Reshape(Function):
         self.__o_shape = x.shape
         return np.reshape(x, self.__n_shape)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         return reshape(dout, self.__o_shape)
 
 
-def reshape(x: np.ndarray | IVariable | list[int], shape: tuple[int]) -> IVariable:
+def reshape(x: np.ndarray | ITensor | list[int], shape: tuple[int]) -> ITensor:
     """
     list[int]代表原生多维数组
     """
     return Reshape(shape)(x)
 
 
-class Transpose(Function):
+class Transpose(Operator):
     """
     np.transpose:数据本身在内存中不会变,只是改变shape、stride。
 
@@ -396,7 +401,7 @@ class Transpose(Function):
     def forward(self, x: np.ndarray):
         return x.transpose(self.__n_axes)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         n_axes = self.__n_axes
         if n_axes is None:
             return transpose(dout)
@@ -406,7 +411,7 @@ class Transpose(Function):
         return transpose(dout, inv_axis)
 
 
-def transpose(x: np.ndarray | IVariable | list[int], axes=None):
+def transpose(x: np.ndarray | ITensor | list[int], axes=None):
     """
     list[int]代表原生多维数组
     """
@@ -422,7 +427,7 @@ def transpose(x: np.ndarray | IVariable | list[int], axes=None):
 # ==========================================================================
 
 
-class Sum(Function):
+class Sum(Operator):
     __keepdims: bool
     __axes: tuple[int] | int
     __from_shape: tuple[int]
@@ -439,7 +444,7 @@ class Sum(Function):
         self.__from_shape = x.shape
         return np.sum(x, axis=self.__axes, keepdims=self.__keepdims)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         keepdims = self.__keepdims
         axes = self.__axes
         from_shape = self.__from_shape
@@ -456,12 +461,12 @@ class Sum(Function):
         return broadcast_to(reshape(dout, tuple(to_shape)), from_shape)
 
 
-def sum(x: any, axes: tuple[int] | int = None, keepdims=False) -> IVariable:
+def sum(x: any, axes: tuple[int] | int = None, keepdims=False) -> ITensor:
 
     return Sum(axes=axes, keep_dims=keepdims)(x)
 
 
-class BroadcastTo(Function):
+class BroadcastTo(Operator):
     """
     广播扩展算子
     from_shape - 扩展前张量形状
@@ -487,15 +492,15 @@ class BroadcastTo(Function):
             return x
         return np.broadcast_to(x, self.__to_shape)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         return sum_to(dout, self.__from_shape)
 
 
-def broadcast_to(x: np.ndarray, shape: tuple[int]) -> IVariable:
+def broadcast_to(x: np.ndarray, shape: tuple[int]) -> ITensor:
     return BroadcastTo(shape=shape)(x)
 
 
-class SumTo(Function):
+class SumTo(Operator):
     """
     规约对齐求和算子
 
@@ -552,25 +557,25 @@ class SumTo(Function):
             result = result.squeeze()
         return result
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         return broadcast_to(dout, self.__from_shape)
 
 
-def sum_to(x: np.ndarray, shape: tuple[int]) -> IVariable:
+def sum_to(x: np.ndarray, shape: tuple[int]) -> ITensor:
     return SumTo(shape=shape)(x)
 
 
-class Dot(Function):
+class Dot(Operator):
 
     def forward(self, x: np.ndarray, w: np.ndarray):
         return x.dot(w)
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         x, w = self.inputs
         return dot(dout, w.data.T), dot(x.data.T, dout)
 
 
-def dot(x: np.ndarray, w: np.ndarray) -> IVariable:
+def dot(x: np.ndarray, w: np.ndarray) -> ITensor:
     return Dot()(x, w)
 
 
@@ -584,19 +589,19 @@ def dot(x: np.ndarray, w: np.ndarray) -> IVariable:
 # ==========================================================================
 
 
-class MeanSquareLoss(Function):
+class MeanSquareLoss(Operator):
     def forward(self, y_actual: np.ndarray, y_expect: np.ndarray) -> np.ndarray:
         diff: np.ndarray = y_actual - y_expect
         return np.sum((diff) ** 2) / diff.shape[0]
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         y_acutal, y_expect = self.inputs
-        diff: IVariable = y_acutal - y_expect
+        diff: ITensor = y_acutal - y_expect
         dy_actual = dout * 2 * diff / diff.shape[0]
         return dy_actual, -dy_actual
 
 
-def mean_square_loss(y_actual, y_expect) -> IVariable:
+def mean_square_loss(y_actual, y_expect) -> ITensor:
     return MeanSquareLoss()(y_actual, y_expect)
 
 
@@ -610,19 +615,19 @@ def mean_square_loss(y_actual, y_expect) -> IVariable:
 # ==========================================================================
 
 
-class Sigmoid(Function):
+class Sigmoid(Operator):
     def forward(self, x: np.ndarray) -> np.ndarray:
         # 传统形式：y=1/(1+np.exp(-x)),做变量代换，令z=x*0.5，两者是等价的。
         # tanh 在 numpy 底层做了稳定算法，不会出现指数直接爆炸计算，大幅度缓解极
         # 端输入下的溢出问题。
         return np.tanh(x * 0.5) * 0.5 + 0.5
 
-    def backward(self, dout: IVariable) -> IVariable:
+    def backward(self, dout: ITensor) -> ITensor:
         x = self.outputs[0]()
         return dout * x * (1 - x)
 
 
-def sigmoid(x) -> IVariable:
+def sigmoid(x) -> ITensor:
     return Sigmoid()(x)
 
 
@@ -635,7 +640,7 @@ def sigmoid(x) -> IVariable:
 # ==========================================================================
 
 
-class Linear(Function):
+class Linear(Operator):
     """
     线性仿射算子
     """
@@ -646,7 +651,7 @@ class Linear(Function):
             out = out + b
         return out
 
-    def backward(self, dout) -> tuple[IVariable]:
+    def backward(self, dout) -> tuple[ITensor]:
         x, w, b = self.inputs
         db = None
         if b is not None:
@@ -656,7 +661,7 @@ class Linear(Function):
         return dx, dw, db
 
 
-def linear(x, w, b) -> IVariable:
+def linear(x, w, b) -> ITensor:
     return Linear()(x, w, b)
 
 

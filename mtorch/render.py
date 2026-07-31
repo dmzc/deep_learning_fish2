@@ -1,11 +1,11 @@
-from dezero.interfaces import IFunction, IVariable
+from mtorch.interfaces import IOperator, ITensor
 from graphviz import Digraph
 from pathlib import Path
 import os
 import time
 
 
-def render(x: IVariable | list[IVariable], path: Path = None):
+def render(x: ITensor | list[ITensor], path: Path = None):
 
     # 有向图，从左到右流向LR
     dot = Digraph("signal_flow", format="png")
@@ -22,10 +22,10 @@ def render(x: IVariable | list[IVariable], path: Path = None):
         margin="0.15,0.1",
     )
     IVariables: set = set()
-    functions: set = set()
+    operators: set = set()
     handled_funtions: set = set()
 
-    def add_node(node: IFunction, is_IVariable=True):
+    def add_node(node: IOperator, is_IVariable=True):
         id = node.id
         name = node.name
         if is_IVariable:
@@ -44,8 +44,8 @@ def render(x: IVariable | list[IVariable], path: Path = None):
                     fillcolor=fill_color,
                 )
         else:
-            if id not in functions:
-                functions.add(id)
+            if id not in operators:
+                operators.add(id)
                 dot.node(
                     name=id,
                     label=name,
@@ -62,7 +62,7 @@ def render(x: IVariable | list[IVariable], path: Path = None):
         else:
             dot.edge(left, right, label=label)
 
-    def process(func: IFunction):
+    def process(func: IOperator):
         if func is None:
             return
         if func not in handled_funtions:

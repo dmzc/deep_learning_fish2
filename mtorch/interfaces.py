@@ -1,18 +1,21 @@
 from __future__ import annotations
 import numpy as np
 import weakref
-from dataclasses import dataclass
-from abc import ABC
+from abc import ABC, abstractmethod
+from collections.abc import Iterable
 
 
-class IVariable(ABC):
+class ITensor(ABC):
+    """
+    张量
+    """
 
     is_input: bool
     data: np.ndarray
-    grad: IVariable
-    creator: IFunction
+    grad: ITensor
+    creator: IOperator
     generation: int
-    __array_priority__ = 200
+    require_grad: bool
 
     @property
     def id(self) -> str: ...
@@ -37,15 +40,19 @@ class IVariable(ABC):
     def backward(self, retain_grad=False) -> None: ...
 
 
-class IFunction(ABC):
-    inputs: list[IVariable]
-    outputs: list[weakref.ref[IVariable]]
+class IOperator(ABC):
+    """
+    算子
+    """
+
+    inputs: list[ITensor]
+    outputs: list[weakref.ref[ITensor]]
     label: str
     generation: int
 
     def forward(self, *xs: np.ndarray) -> any: ...
 
-    def backward(self, dout: IVariable) -> IVariable: ...
+    def backward(self, dout: ITensor) -> ITensor: ...
 
     @property
     def id(self) -> str: ...
@@ -54,9 +61,10 @@ class IFunction(ABC):
     def name(self) -> str: ...
 
 
-@dataclass
-class IVariableArgs:
-    data: any  # 数值、np.ndarray，不能是Variable实例
-    creator: IFunction = None
-    name: str = None
-    is_input: bool = False
+class IModule(ABC):
+
+    @abstractmethod
+    def forward(self, x: any) -> any: ...
+
+    @abstractmethod
+    def params(self) -> Iterable[IModule]: ...

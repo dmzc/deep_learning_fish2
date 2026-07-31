@@ -1,13 +1,13 @@
-from dezero import IVariable, IVariableArgs, render, create_variable
+from mtorch import ITensor, render, Tensor
 from pathlib import Path
 
 current_file = Path(__file__)
 current_dir = current_file.parent
 
 
-x = create_variable(IVariableArgs(data=2.0, is_input=True))
-y = create_variable(IVariableArgs(data=3.0, is_input=True))
-z: IVariable = (
+x = Tensor(data=2.0, is_input=True)
+y = Tensor(data=3.0, is_input=True)
+z: ITensor = (
     1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
 ) * (
     30

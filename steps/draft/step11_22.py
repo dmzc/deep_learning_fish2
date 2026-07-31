@@ -4,7 +4,7 @@ from graphviz import Digraph
 import psutil
 import os
 import weakref
-from config import ENABLE_BACKPROGATION
+from steps.draft.config import ENABLE_BACKPROGATION
 
 
 class Variable:

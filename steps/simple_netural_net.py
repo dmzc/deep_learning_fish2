@@ -1,4 +1,4 @@
-from dezero import F, create_variable, IVariable, IVariableArgs
+from mtorch import F, Tensor, ITensor
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,10 +7,10 @@ x: np.ndarray = np.random.rand(100, 1)
 y: np.ndarray = np.sin(2 * np.pi * x) + np.random.rand(100, 1)
 
 I, H, O = 1, 10, 1
-w1 = create_variable(IVariableArgs(data=0.01 * np.random.randn(I, H)))
-b1 = create_variable(IVariableArgs(data=np.zeros(H)))
-w2 = create_variable(IVariableArgs(data=0.01 * np.random.randn(H, O)))
-b2 = create_variable(IVariableArgs(data=np.zeros(O)))
+w1 = Tensor(data=0.01 * np.random.randn(I, H))
+b1 = Tensor(data=np.zeros(H))
+w2 = Tensor(data=0.01 * np.random.randn(H, O))
+b2 = Tensor(data=np.zeros(O))
 
 
 def predict(x: np.ndarray) -> np.ndarray:
@@ -24,8 +24,8 @@ lr = 0.2
 iters = 10000
 
 for index in range(iters):
-    y_actual: IVariable = predict(x)
-    loss: IVariable = F.mean_square_loss(y_actual=y_actual, y_expect=y)
+    y_actual: ITensor = predict(x)
+    loss: ITensor = F.mean_square_loss(y_actual=y_actual, y_expect=y)
     if index % 1000 == 0:
         print(f"第{index}轮损失{loss}")
 

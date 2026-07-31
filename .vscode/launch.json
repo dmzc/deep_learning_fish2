@@ -32,7 +32,7 @@
             "justMyCode": false
         },
         {
-            "name": "pytest-dezero",
+            "name": "pytest-mtorch",
             "type": "debugpy",
             "request": "launch",
             "module": "pytest",
@@ -41,8 +41,8 @@
                 // 也可以留空，运行所有测试
                 "-vv",
                 "-s",
-                "--rootdir=./dezero",
-                "--md=./dezero/tests/test_report.md",
+                "--rootdir=./mtorch",
+                "--md=./mtorch/tests/test_report.md",
             ],
             "console": "integratedTerminal",
             "justMyCode": false

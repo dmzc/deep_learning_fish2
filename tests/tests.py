@@ -1,4 +1,4 @@
-from steps.step1_10 import square, exp, Variable, numerical_diff
+from steps.draft.step1_10 import square, exp, Variable, numerical_diff
 import numpy as np
 
 

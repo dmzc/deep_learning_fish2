@@ -1,9 +1,10 @@
-from dezero import IVariable, IVariableArgs, F, render, create_variable
+from mtorch import ITensor, F, render, Tensor
 import numpy as np
 
+# 测试高阶导
 
-x: IVariable = create_variable(IVariableArgs(data=np.pi / 4, name="X", is_input=True))
-y: IVariable = F.sin(x)
+x: ITensor = Tensor(data=np.pi / 4, name="X", is_input=True)
+y: ITensor = F.sin(x)
 y.backward()
 grad = x.grad
 x.clear_grad()

@@ -1,22 +1,34 @@
 from __future__ import annotations
 import numpy as np
-from dezero.config import ENABLE_BACKPROGATION
-from dezero.interfaces import IVariable, IFunction, IVariableArgs
+from mtorch.config import ENABLE_BACKPROGATION
+from mtorch.interfaces import ITensor, IOperator
 
 
-class Variable(IVariable):
+class Tensor(ITensor):
 
     __name: str
+    
+    # TODO：修改为__array_func__
+    __array_priority__ = 200
 
-    def __init__(self, args: IVariableArgs):
-        super().__init__()
-        self.data = args.data
+    def __init__(
+        self,
+        data: any,  # 数值、np.ndarray，不能是Variable实例
+        creator: IOperator = None,
+        name: str = None,
+        is_input: bool = False,
+        require_grad: bool = False,
+    ):
+        if np.isscalar(data) or isinstance(data, list) or isinstance(data, tuple):
+            data = np.array(data)
+        self.data = data
         self.grad = None
-        self.__name = args.name
-        self.is_input = args.is_input
+        self.__name = name
+        self.is_input = is_input
+        self.require_grad = require_grad
         if ENABLE_BACKPROGATION:
-            creator = self.creator = args.creator
-            if args.creator is None:
+            creator = self.creator = creator
+            if creator is None:
                 self.generation = 0
             else:
                 self.generation = creator.generation + 1
@@ -29,10 +41,8 @@ class Variable(IVariable):
             return
 
         if self.grad is None:
-            self.grad = create_variable(
-                IVariableArgs(data=np.ones_like(self), is_input=self.is_input)
-            )
-        creators: list[IFunction] = []
+            self.grad = Tensor(data=np.ones_like(self), is_input=self.is_input)
+        creators: list[IOperator] = []
         seen_set: set = set()
 
         def add_creator(creator):
@@ -109,14 +119,3 @@ class Variable(IVariable):
             return "variable(None)"
         p = str(self.data).replace("\n", "\n" + " " * 9)
         return "variable(" + p + ")"
-
-
-def create_variable(args: IVariableArgs | any) -> IVariable:
-    if not isinstance(args, IVariableArgs):
-        args = IVariableArgs(data=args)
-    data = args.data
-    if isinstance(data, IVariable):
-        return data
-    if np.isscalar(data) or isinstance(data, list) or isinstance(data, tuple):
-        args.data = np.array(data)
-    return Variable(args)
