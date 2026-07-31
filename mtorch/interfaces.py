@@ -67,4 +67,16 @@ class IModule(ABC):
     def forward(self, x: any) -> any: ...
 
     @abstractmethod
-    def params(self) -> Iterable[IModule]: ...
+    def params(self) -> Iterable[ITensor]: ...
+
+
+class IOptimizer(ABC):
+
+    _params_obj: IModule
+
+    def __init__(self, params_obj: IModule):
+        super().__init__()
+        self._params_obj = params_obj
+
+    @abstractmethod
+    def step(self): ...

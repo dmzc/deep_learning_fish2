@@ -23,9 +23,13 @@ class Module(IModule):
         if subs is None:
             return
         for sub in subs:
-            obj = getattr(sub)
+            obj = getattr(self, sub)
             if isinstance(obj, ITensor):
-                return obj
+                yield obj
             else:
                 m: IModule = obj
-                return m.params()
+                yield from m.params()
+
+    def clear_grads(self):
+        for param in self.params():
+            param.clear_grad()

@@ -2,6 +2,8 @@ from mtorch.interfaces import ITensor
 from mtorch.tensor import Tensor
 import mtorch.operator as F
 from mtorch.render import render
+from mtorch.nn import Module, Sequential, Linear, Sigmoid, MeanSquareLoss
+from mtorch.optim import SGD
 
 __version__ = "0.0.13"
 

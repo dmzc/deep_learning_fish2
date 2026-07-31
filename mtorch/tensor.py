@@ -119,6 +119,6 @@ class Tensor(ITensor):
 
     def __repr__(self):
         if self.data is None:
-            return "variable(None)"
+            return "tensor(None)"
         p = str(self.data).replace("\n", "\n" + " " * 9)
-        return "variable(" + p + ")"
+        return "tensor(" + p + ")"
